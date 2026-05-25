@@ -4,7 +4,7 @@ import json
 
 import httpx
 
-from .server import AAP_API_PREFIX, AAP_PASSWORD, AAP_URL, AAP_USERNAME, AAP_VERIFY_SSL, mcp
+from .config import AAP_API_PREFIX, AAP_PASSWORD, AAP_URL, AAP_USERNAME, AAP_VERIFY_SSL
 
 
 def _aap_client() -> httpx.Client:
@@ -19,7 +19,6 @@ def _aap_client() -> httpx.Client:
     )
 
 
-@mcp.tool()
 def list_job_templates() -> dict:
     """
     List all available Ansible job templates in AAP.
@@ -51,7 +50,6 @@ def list_job_templates() -> dict:
     return {"success": True, "job_templates": templates, "count": len(templates)}
 
 
-@mcp.tool()
 def launch_job(
     job_template_name: str,
     extra_vars: dict | None = None,
@@ -98,7 +96,6 @@ def launch_job(
     }
 
 
-@mcp.tool()
 def upsert_job_template(
     template_name: str,
     playbook: str,
@@ -178,7 +175,6 @@ def upsert_job_template(
     }
 
 
-@mcp.tool()
 def get_job_status(job_id: int) -> dict:
     """
     Get the current status of an Ansible job.
@@ -211,7 +207,6 @@ def get_job_status(job_id: int) -> dict:
     }
 
 
-@mcp.tool()
 def get_job_output(job_id: int, last_lines: int = 50) -> dict:
     """
     Get stdout output from an Ansible job.
@@ -242,3 +237,6 @@ def get_job_output(job_id: int, last_lines: int = 50) -> dict:
         "total_lines": len(lines),
         "truncated_to": last_lines,
     }
+
+
+tools = [list_job_templates, launch_job, upsert_job_template, get_job_status, get_job_output]

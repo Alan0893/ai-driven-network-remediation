@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from .server import DEFAULT_NAMESPACE, LOKI_TOKEN, LOKI_URL, mcp
+from .config import DEFAULT_NAMESPACE, LOKI_TOKEN, LOKI_URL
 
 _DURATION_UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
 
@@ -24,7 +24,6 @@ def _parse_duration_ns(duration: str) -> int:
     return value * _DURATION_UNITS.get(unit, 3600) * 1_000_000_000
 
 
-@mcp.tool()
 def query_logs(
     logql_query: str,
     duration: str = "1h",
@@ -87,7 +86,6 @@ def query_logs(
         return {"success": False, "error": f"LokiStack connection error: {e}"}
 
 
-@mcp.tool()
 def get_recent_errors(
     namespace: str = DEFAULT_NAMESPACE,
     app: str = "nginx",
@@ -111,7 +109,6 @@ def get_recent_errors(
     return query_logs(logql, duration, limit)
 
 
-@mcp.tool()
 def count_errors(
     namespace: str = DEFAULT_NAMESPACE,
     app: str = "nginx",
@@ -171,3 +168,6 @@ def count_errors(
         return {"success": False, "error": f"LokiStack API error: {e.response.status_code} – {e.response.text[:200]}"}
     except httpx.HTTPError as e:
         return {"success": False, "error": f"LokiStack connection error: {e}"}
+
+
+tools = [query_logs, get_recent_errors, count_errors]

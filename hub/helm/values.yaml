@@ -79,6 +79,19 @@ minio:
     port: "9000"
   sampleFileUpload:
     enabled: false
+# ── MCP Secrets ───────────────────────────────────────────────────
+# Credentials for MCP servers injected via secretKeyRef.
+# Set create: false and create the secrets out-of-band if preferred.
+# Override values at install time: --set mcpSecrets.aap.password=...
+mcpSecrets:
+  aap:
+    create: true
+    username: ""
+    password: ""
+  servicenow:
+    create: true
+    apiKey: ""
+
 # ── MCP Servers (subchart: mcp-servers) ──────────────────────────
 # Deployed via the shared mcp-servers Helm chart from ai-architecture-charts.
 # Each server is a FastMCP service exposing tools to the AI remediation agent.
@@ -94,10 +107,10 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
 
     noc-lokistack:
@@ -108,10 +121,10 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
 
     noc-kafka:
@@ -122,10 +135,10 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
 
     noc-aap:
@@ -136,13 +149,18 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
-        AAP_USERNAME: "placeholder"
-        AAP_PASSWORD: "placeholder"
+      envSecrets:
+        AAP_USERNAME:
+          name: noc-aap-secret
+          key: AAP_USERNAME
+        AAP_PASSWORD:
+          name: noc-aap-secret
+          key: AAP_PASSWORD
 
     noc-slack:
       enabled: true
@@ -152,10 +170,10 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
 
     noc-servicenow:
@@ -166,12 +184,15 @@ mcp-servers:
         tag: "0.1.0"
       port: 8000
       targetPort: 8000
-      transport: sse
+      transport: streamable-http
       imagePullPolicy: IfNotPresent
       env:
-        MCP_TRANSPORT: "sse"
+        MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
-        SERVICENOW_API_KEY: "placeholder"
+      envSecrets:
+        SERVICENOW_API_KEY:
+          name: noc-servicenow-secret
+          key: SERVICENOW_API_KEY
 
     # Disable default servers from the shared chart
     weather:

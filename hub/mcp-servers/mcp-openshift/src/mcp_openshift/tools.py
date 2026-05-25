@@ -3,7 +3,7 @@
 import json
 import subprocess
 
-from .server import DEFAULT_NAMESPACE, EDGE_KUBECONFIG, mcp
+from .server import DEFAULT_NAMESPACE, EDGE_KUBECONFIG
 
 
 def _run_oc(args: list[str], kubeconfig: str = EDGE_KUBECONFIG) -> dict:
@@ -23,7 +23,6 @@ def _run_oc(args: list[str], kubeconfig: str = EDGE_KUBECONFIG) -> dict:
         return {"stdout": "", "stderr": str(e), "returncode": -1, "success": False}
 
 
-@mcp.tool()
 def get_pods(namespace: str = DEFAULT_NAMESPACE) -> dict:
     """
     List all pods in the specified namespace with their status.
@@ -62,7 +61,6 @@ def get_pods(namespace: str = DEFAULT_NAMESPACE) -> dict:
         return {"error": f"Failed to parse pod output: {e}", "pods": []}
 
 
-@mcp.tool()
 def get_events(namespace: str = DEFAULT_NAMESPACE, limit: int = 20) -> dict:
     """
     Get recent Kubernetes events (especially warnings) from a namespace.
@@ -99,7 +97,6 @@ def get_events(namespace: str = DEFAULT_NAMESPACE, limit: int = 20) -> dict:
         return {"error": f"Failed to parse events: {e}", "events": []}
 
 
-@mcp.tool()
 def rollout_restart(deployment: str, namespace: str = DEFAULT_NAMESPACE) -> dict:
     """
     Trigger a rolling restart of a deployment (safe — no downtime if replicas > 1).
@@ -135,7 +132,6 @@ def rollout_restart(deployment: str, namespace: str = DEFAULT_NAMESPACE) -> dict
     }
 
 
-@mcp.tool()
 def patch_deployment_memory(
     deployment: str,
     memory_limit: str,
@@ -182,7 +178,6 @@ def patch_deployment_memory(
     }
 
 
-@mcp.tool()
 def get_pod_logs(
     pod_name: str,
     namespace: str = DEFAULT_NAMESPACE,
@@ -213,3 +208,6 @@ def get_pod_logs(
         "success": result["success"],
         "error": result["stderr"] if not result["success"] else None,
     }
+
+
+tools = [get_pods, get_events, rollout_restart, patch_deployment_memory, get_pod_logs]

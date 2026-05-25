@@ -14,17 +14,12 @@ Tools:
 Transport: Configurable via MCP_TRANSPORT env var (default: sse)
 """
 
-import os
-from typing import Any, Literal
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from starlette.responses import JSONResponse
 
-MCP_TRANSPORT: Literal["stdio", "sse", "streamable-http"] = os.environ.get(
-    "MCP_TRANSPORT", "sse"
-)  # type: ignore[assignment]
-MCP_PORT = int(os.environ.get("MCP_PORT", "8004"))
-MCP_HOST = os.environ.get("MCP_HOST", "0.0.0.0")
+from .config import MCP_HOST, MCP_PORT, MCP_TRANSPORT
 
 mcp = FastMCP(
     "noc-aap",
@@ -38,12 +33,6 @@ mcp = FastMCP(
     stateless_http=(MCP_TRANSPORT == "streamable-http"),
 )
 
-AAP_URL = os.getenv("AAP_URL", "https://aap.aap.svc")
-AAP_API_PREFIX = os.getenv("AAP_API_PREFIX", "/api/v2")
-AAP_USERNAME = os.environ["AAP_USERNAME"]
-AAP_PASSWORD = os.environ["AAP_PASSWORD"]
-AAP_VERIFY_SSL = os.getenv("AAP_VERIFY_SSL", "true").lower() == "true"
-
 
 @mcp.custom_route("/health", methods=["GET"])  # type: ignore
 async def health(request: Any) -> JSONResponse:
@@ -56,6 +45,9 @@ def main() -> None:
     mcp.run(transport=MCP_TRANSPORT)
 
 
-app = mcp.streamable_http_app()
+from .tools import tools
 
-from . import tools as _tools  # noqa: E402, F401
+for _tool in tools:
+    mcp.add_tool(_tool)
+
+app = mcp.streamable_http_app()

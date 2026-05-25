@@ -13,7 +13,7 @@ Environment Variables:
     LLAMASTACK_PORT: Llama Stack port (default: 8321)
 """
 
-from .app import app  # noqa: F401
+from .app import app
 
 
 def main() -> None:
