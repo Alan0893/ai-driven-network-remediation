@@ -7,8 +7,17 @@ RELEASE         ?= hub
 PUSH_EXTRA_ARGS ?=
 ROUTES_ENABLED  ?= true
 
-CHATBOT_IMG    := $(REGISTRY)/noc-chatbot-service:$(VERSION)
-INGESTION_IMG  := $(REGISTRY)/noc-ingestion-pipeline:$(VERSION)
+CHATBOT_IMG        := $(REGISTRY)/noc-chatbot-service:$(VERSION)
+INGESTION_IMG      := $(REGISTRY)/noc-ingestion-pipeline:$(VERSION)
+MCP_OPENSHIFT_IMG  := $(REGISTRY)/noc-mcp-openshift:$(VERSION)
+MCP_LOKISTACK_IMG  := $(REGISTRY)/noc-mcp-lokistack:$(VERSION)
+MCP_KAFKA_IMG      := $(REGISTRY)/noc-mcp-kafka:$(VERSION)
+MCP_AAP_IMG        := $(REGISTRY)/noc-mcp-aap:$(VERSION)
+MCP_SLACK_IMG      := $(REGISTRY)/noc-mcp-slack:$(VERSION)
+MCP_SERVICENOW_IMG := $(REGISTRY)/noc-mcp-servicenow:$(VERSION)
+
+MCP_CONTAINERFILE  := hub/mcp-servers/Containerfile
+MCP_CONTEXT        := hub/mcp-servers
 
 # ── Langfuse (optional: ENABLE_LANGFUSE=true) ───────────────────
 ENABLE_LANGFUSE        ?=
@@ -37,15 +46,47 @@ helm_adnr_llm_args = \
 	$(if $(ADNR_LLM_ENABLED),--set-string llama-stack.models.adnr-llm.url='$(ADNR_LLM_URL)',) \
 	$(if $(ADNR_LLM_ENABLED),--set-string llama-stack.models.adnr-llm.apiToken='$(ADNR_LLM_TOKEN)',)
 
+helm_mcp_image_args = \
+	--set mcp-servers.mcp-servers.noc-openshift.image.repository=$(REGISTRY)/noc-mcp-openshift \
+	--set mcp-servers.mcp-servers.noc-openshift.image.tag=$(VERSION) \
+	--set mcp-servers.mcp-servers.noc-lokistack.image.repository=$(REGISTRY)/noc-mcp-lokistack \
+	--set mcp-servers.mcp-servers.noc-lokistack.image.tag=$(VERSION) \
+	--set mcp-servers.mcp-servers.noc-kafka.image.repository=$(REGISTRY)/noc-mcp-kafka \
+	--set mcp-servers.mcp-servers.noc-kafka.image.tag=$(VERSION) \
+	--set mcp-servers.mcp-servers.noc-aap.image.repository=$(REGISTRY)/noc-mcp-aap \
+	--set mcp-servers.mcp-servers.noc-aap.image.tag=$(VERSION) \
+	--set mcp-servers.mcp-servers.noc-slack.image.repository=$(REGISTRY)/noc-mcp-slack \
+	--set mcp-servers.mcp-servers.noc-slack.image.tag=$(VERSION) \
+	--set mcp-servers.mcp-servers.noc-servicenow.image.repository=$(REGISTRY)/noc-mcp-servicenow \
+	--set mcp-servers.mcp-servers.noc-servicenow.image.tag=$(VERSION)
+
 .PHONY: build-all-images
-build-all-images:
+build-all-images: build-chatbot-image build-mcp-images
+
+.PHONY: build-chatbot-image
+build-chatbot-image:
 	$(CONTAINER_TOOL) build -t $(CHATBOT_IMG) --platform=$(ARCH) -f hub/chatbot-service/Containerfile hub/chatbot-service
 	$(CONTAINER_TOOL) build -t $(INGESTION_IMG) --platform=$(ARCH) -f hub/ingestion-pipeline/Containerfile hub/ingestion-pipeline
+
+.PHONY: build-mcp-images
+build-mcp-images:
+	$(CONTAINER_TOOL) build -t $(MCP_OPENSHIFT_IMG)  --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-openshift  --build-arg MODULE_NAME=mcp_openshift  -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
+	$(CONTAINER_TOOL) build -t $(MCP_LOKISTACK_IMG)  --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-lokistack  --build-arg MODULE_NAME=mcp_lokistack  -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
+	$(CONTAINER_TOOL) build -t $(MCP_KAFKA_IMG)      --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-kafka      --build-arg MODULE_NAME=mcp_kafka      -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
+	$(CONTAINER_TOOL) build -t $(MCP_AAP_IMG)        --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-aap        --build-arg MODULE_NAME=mcp_aap        -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
+	$(CONTAINER_TOOL) build -t $(MCP_SLACK_IMG)      --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-slack      --build-arg MODULE_NAME=mcp_slack      -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
+	$(CONTAINER_TOOL) build -t $(MCP_SERVICENOW_IMG) --platform=$(ARCH) --build-arg SERVICE_NAME=mcp-servicenow --build-arg MODULE_NAME=mcp_servicenow -f $(MCP_CONTAINERFILE) $(MCP_CONTEXT)
 
 .PHONY: push-all-images
 push-all-images:
 	$(CONTAINER_TOOL) push $(CHATBOT_IMG) $(PUSH_EXTRA_ARGS)
 	$(CONTAINER_TOOL) push $(INGESTION_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_OPENSHIFT_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_LOKISTACK_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_KAFKA_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_AAP_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_SLACK_IMG) $(PUSH_EXTRA_ARGS)
+	$(CONTAINER_TOOL) push $(MCP_SERVICENOW_IMG) $(PUSH_EXTRA_ARGS)
 
 .PHONY: reinstall-all
 reinstall-all:
@@ -70,6 +111,7 @@ helm-install: namespace helm-depend
 		--set image.ingestionPipeline=noc-ingestion-pipeline \
 		--set global.routes.enabled=$(ROUTES_ENABLED) \
 		--set image.tag=$(VERSION) \
+		$(helm_mcp_image_args) \
 		$(helm_adnr_llm_args) \
 		$(HELM_EXTRA_ARGS) \
 		--wait --timeout 30m
@@ -194,7 +236,19 @@ integration-tests:
 	PF1_PID=$$!; \
 	oc port-forward -n $(NAMESPACE) svc/hub-ingestion-pipeline 8000:8000 & \
 	PF2_PID=$$!; \
-	trap "kill $$PF1_PID $$PF2_PID" EXIT; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-openshift 8001:8000 & \
+	PF3_PID=$$!; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-lokistack 8002:8000 & \
+	PF4_PID=$$!; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-kafka 8003:8000 & \
+	PF5_PID=$$!; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-aap 8004:8000 & \
+	PF6_PID=$$!; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-slack 8005:8000 & \
+	PF7_PID=$$!; \
+	oc port-forward -n $(NAMESPACE) svc/mcp-noc-servicenow 8006:8000 & \
+	PF8_PID=$$!; \
+	trap "kill $$PF1_PID $$PF2_PID $$PF3_PID $$PF4_PID $$PF5_PID $$PF6_PID $$PF7_PID $$PF8_PID" EXIT; \
 	sleep 2 && cd hub/integration-tests && uv run pytest
 
 # ── Langfuse day-2 targets ───────────────────────────────────────

@@ -89,3 +89,129 @@ minio:
     port: "9000"
   sampleFileUpload:
     enabled: false
+# ── MCP Secrets ───────────────────────────────────────────────────
+# Credentials for MCP servers injected via secretKeyRef.
+# Set create: false and create the secrets out-of-band if preferred.
+# Override values at install time: --set mcpSecrets.aap.password=...
+mcpSecrets:
+  aap:
+    create: true
+    username: ""
+    password: ""
+  servicenow:
+    create: true
+    apiKey: ""
+
+# ── MCP Servers (subchart: mcp-servers) ──────────────────────────
+# Deployed via the shared mcp-servers Helm chart from ai-architecture-charts.
+# Each server is a FastMCP service exposing tools to the AI remediation agent.
+# Set skipRoute: true for Kind/non-OpenShift clusters (CI).
+mcp-servers:
+  enabled: true
+  mcp-servers:
+    noc-openshift:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-openshift
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+
+    noc-lokistack:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-lokistack
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+
+    noc-kafka:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-kafka
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+
+    noc-aap:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-aap
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+      envSecrets:
+        AAP_USERNAME:
+          name: noc-aap-secret
+          key: AAP_USERNAME
+        AAP_PASSWORD:
+          name: noc-aap-secret
+          key: AAP_PASSWORD
+
+    noc-slack:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-slack
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+
+    noc-servicenow:
+      enabled: true
+      deploymentMode: deployment
+      image:
+        repository: quay.io/rh-ai-quickstart/noc-mcp-servicenow
+        tag: "0.1.0"
+      port: 8000
+      targetPort: 8000
+      transport: streamable-http
+      imagePullPolicy: IfNotPresent
+      env:
+        MCP_TRANSPORT: "streamable-http"
+        MCP_PORT: "8000"
+      envSecrets:
+        SERVICENOW_API_KEY:
+          name: noc-servicenow-secret
+          key: SERVICENOW_API_KEY
+
+    # Disable default servers from the shared chart
+    weather:
+      enabled: false
+    oracle-sqlcl:
+      enabled: false
+    github-mcp:
+      enabled: false
+    openshift-mcp:
+      enabled: false
+    slack-mcp:
+      enabled: false
