@@ -45,9 +45,6 @@ def main() -> None:
     mcp.run(transport=MCP_TRANSPORT)
 
 
-from .tools import tools
-
-for _tool in tools:
-    mcp.add_tool(_tool)
+from . import tools as _tools  # noqa: E402, F401
 
 app = mcp.streamable_http_app()

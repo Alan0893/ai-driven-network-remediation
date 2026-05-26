@@ -16,6 +16,7 @@ from .config import (
     SNOW_URL,
     SNOW_USERNAME,
 )
+from .server import mcp
 
 
 def _is_real_servicenow() -> bool:
@@ -127,6 +128,7 @@ def _notify_slack_ticket_created(ticket: dict) -> dict:
         return {"sent": False, "reason": str(exc)}
 
 
+@mcp.tool()
 def create_incident(
     short_description: str,
     description: str,
@@ -194,6 +196,7 @@ def create_incident(
         return {"success": False, "error": str(e)}
 
 
+@mcp.tool()
 def update_incident(
     ticket_number: str,
     work_notes: str,
@@ -237,6 +240,7 @@ def update_incident(
         return {"success": False, "error": str(e)}
 
 
+@mcp.tool()
 def get_incident(ticket_number: str) -> dict:
     """
     Get details of an existing ServiceNow incident.
@@ -270,6 +274,7 @@ def get_incident(ticket_number: str) -> dict:
         return {"success": False, "error": str(e)}
 
 
+@mcp.tool()
 def resolve_incident(
     ticket_number: str,
     resolution_notes: str,
@@ -313,6 +318,3 @@ def resolve_incident(
         return {"success": False, "error": f"ServiceNow connection error: {e}"}
     except ValueError as e:
         return {"success": False, "error": str(e)}
-
-
-tools = [create_incident, update_incident, get_incident, resolve_incident]

@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from kafka import KafkaConsumer, KafkaProducer
 from kafka.structs import TopicPartition
 
-from .server import KAFKA_BOOTSTRAP
+from .server import KAFKA_BOOTSTRAP, mcp
 
 
+@mcp.tool()
 def consume_topic(
     topic: str,
     max_messages: int = 20,
@@ -67,6 +68,7 @@ def consume_topic(
     return {"topic": topic, "messages": messages, "count": len(messages)}
 
 
+@mcp.tool()
 def produce_message(
     topic: str,
     message: dict,
@@ -105,6 +107,7 @@ def produce_message(
     }
 
 
+@mcp.tool()
 def get_consumer_lag(
     group_id: str = "dark-noc-agent",
     topic: str = "nginx-logs",
@@ -159,6 +162,7 @@ def get_consumer_lag(
     }
 
 
+@mcp.tool()
 def list_topics() -> dict:
     """
     List all available Kafka topics.
@@ -179,6 +183,3 @@ def list_topics() -> dict:
         consumer.close()
 
     return {"topics": result, "count": len(result)}
-
-
-tools = [consume_topic, produce_message, get_consumer_lag, list_topics]

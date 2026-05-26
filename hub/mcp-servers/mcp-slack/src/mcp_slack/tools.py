@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 
 from .config import SLACK_BASE_URL, SLACK_BOT_TOKEN, SLACK_NOC_CHANNEL
+from .server import mcp
 
 _SEVERITY_COLORS = {
     "critical": "#FF0000",
@@ -33,6 +34,7 @@ def _slack_post(endpoint: str, payload: dict) -> dict:
     return data
 
 
+@mcp.tool()
 def send_alert(
     title: str,
     message: str,
@@ -93,6 +95,7 @@ def send_alert(
         return {"success": False, "error": f"Slack error: {e}"}
 
 
+@mcp.tool()
 def send_remediation(
     alert_title: str,
     action_taken: str,
@@ -156,6 +159,7 @@ def send_remediation(
         return {"success": False, "error": f"Slack error: {e}"}
 
 
+@mcp.tool()
 def send_message(
     text: str,
     channel: str = SLACK_NOC_CHANNEL,
@@ -179,6 +183,7 @@ def send_message(
         return {"success": False, "error": f"Slack error: {e}"}
 
 
+@mcp.tool()
 def send_incident_ticket(
     ticket_number: str,
     title: str,
@@ -245,6 +250,3 @@ def send_incident_ticket(
         return {"success": False, "error": f"Slack HTTP error: {e.response.status_code} – {e.response.text[:200]}"}
     except (httpx.HTTPError, ValueError) as e:
         return {"success": False, "error": f"Slack error: {e}"}
-
-
-tools = [send_alert, send_remediation, send_message, send_incident_ticket]
