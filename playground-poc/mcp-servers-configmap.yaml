@@ -1,0 +1,18 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gen-ai-aa-mcp-servers
+  namespace: redhat-ods-applications
+data:
+  MCP-OpenShift: |
+    {"url":"http://mcp-noc-openshift.playground-alan.svc:8000/mcp/","description":"OpenShift cluster operations — namespaces, pods, logs, events, deployments"}
+  MCP-LokiStack: |
+    {"url":"http://mcp-noc-lokistack.playground-alan.svc:8000/mcp/","description":"Log search, metrics, error pattern detection via LokiStack"}
+  MCP-Kafka: |
+    {"url":"http://mcp-noc-kafka.playground-alan.svc:8000/mcp/","description":"Kafka topic and message operations"}
+  MCP-AAP: |
+    {"url":"http://mcp-noc-aap.playground-alan.svc:8000/mcp/","description":"Ansible Automation Platform — job templates, launch, status"}
+  MCP-ServiceNow: |
+    {"url":"http://mcp-noc-servicenow.playground-alan.svc:8000/mcp/","description":"ServiceNow incident management"}
+  MCP-Slack: |
+    {"url":"http://mcp-noc-slack.playground-alan.svc:8000/mcp/","description":"Slack notifications and alerts"}
