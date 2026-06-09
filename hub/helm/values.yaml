@@ -128,6 +128,11 @@ mcpSecrets:
   servicenow:
     create: true
     apiKey: ""
+    # Set username + password to enable real ServiceNow basic-auth mode.
+    # When both are non-empty and SERVICENOW_MODE is "auto", the MCP server
+    # switches from mock (API-key) to real (basic-auth) automatically.
+    username: ""
+    password: ""
 
 # ── MCP Servers (subchart: mcp-servers) ──────────────────────────
 # Deployed via the shared mcp-servers Helm chart from ai-architecture-charts.
@@ -256,10 +261,22 @@ mcp-servers:
       env:
         MCP_TRANSPORT: "streamable-http"
         MCP_PORT: "8000"
+        # For a real ServiceNow instance, override at install time:
+        #   --set mcp-servers.mcp-servers.noc-servicenow.env.SERVICENOW_URL=https://your-instance.service-now.com
+        #   --set mcpSecrets.servicenow.username=admin --set mcpSecrets.servicenow.password=...
+        # "auto" mode uses basic-auth when username+password are non-empty, mock otherwise.
+        SERVICENOW_URL: "http://servicenow-mock.hub.svc:8080"
+        SERVICENOW_MODE: "auto"
       envSecrets:
         SERVICENOW_API_KEY:
           name: noc-servicenow-secret
           key: SERVICENOW_API_KEY
+        SERVICENOW_USERNAME:
+          name: noc-servicenow-secret
+          key: SERVICENOW_USERNAME
+        SERVICENOW_PASSWORD:
+          name: noc-servicenow-secret
+          key: SERVICENOW_PASSWORD
 
     # Disable default servers from the shared chart
     weather:
