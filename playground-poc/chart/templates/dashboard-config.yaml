@@ -1,0 +1,12 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: opendatahub.io/v1alpha
+kind: OdhDashboardConfig
+metadata:
+  name: {{ .Values.dashboard.configName }}
+  namespace: {{ .Values.dashboard.namespace }}
+  labels:
+    {{- include "playground.labels" . | nindent 4 }}
+spec:
+  dashboardConfig:
+    genAiStudio: true
+{{- end }}

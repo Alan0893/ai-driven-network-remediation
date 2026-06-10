@@ -1,0 +1,14 @@
+{{- if .Values.mcpServers.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gen-ai-aa-mcp-servers
+  namespace: {{ .Values.mcpServers.namespace }}
+  labels:
+    {{- include "playground.labels" . | nindent 4 }}
+data:
+  {{- range .Values.mcpServers.servers }}
+  {{ .name }}: |
+    {"url":"{{ tpl .url $ }}","description":"{{ .description }}"}
+  {{- end }}
+{{- end }}
