@@ -81,16 +81,29 @@ chatbotService:
     type: ClusterIP
     port: 80
     targetPort: 8080
+  env:
+    mcpOpenshiftUrl: "http://mcp-noc-openshift:8000"
+    mcpLokistackUrl: "http://mcp-noc-lokistack:8000"
+    mcpKafkaUrl: "http://mcp-noc-kafka:8000"
+    mcpAapUrl: "http://mcp-noc-aap:8000"
+    mcpSlackUrl: "http://mcp-noc-slack:8000"
+    mcpServicenowUrl: "http://mcp-noc-servicenow:8000"
+    servicenowUrl: "http://servicenow-mock:8080"
+    kafkaBootstrap: "kafka:9092"
+    modelApiUrl: "http://llamastack:8321/v1/completions"
+    modelName: "granite-4-h-tiny"
+    demoTopic: "system-alerts"
+    auditTopic: "incident-audit"
   resources: {}
   livenessProbe:
     httpGet:
-      path: /api/hello
+      path: /health
       port: 8080
     initialDelaySeconds: 5
     periodSeconds: 10
   readinessProbe:
     httpGet:
-      path: /api/hello
+      path: /health
       port: 8080
     initialDelaySeconds: 5
     periodSeconds: 10
