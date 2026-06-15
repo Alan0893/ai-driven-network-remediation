@@ -427,3 +427,43 @@ langfuse-status:
 	@echo ""
 	@echo "=== Secrets ==="
 	oc get secret langfuse-secrets --namespace $(NAMESPACE) 2>/dev/null || echo "(none)"
+
+# ── ServiceNow PDI Bootstrap ────────────────────────────────
+
+SERVICENOW_BOOTSTRAP_DIR := scripts/servicenow-bootstrap
+
+.PHONY: deps-servicenow-bootstrap
+deps-servicenow-bootstrap:
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv sync
+
+.PHONY: servicenow-wake-install
+servicenow-wake-install:
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv sync --group wake && uv run playwright install chromium
+
+.PHONY: servicenow-wake
+servicenow-wake:
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv sync --group wake && uv run python -m servicenow_bootstrap.wake_up_pdi
+
+.PHONY: servicenow-bootstrap
+servicenow-bootstrap: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run python -m servicenow_bootstrap.orchestrator --config config.json
+
+.PHONY: servicenow-bootstrap-validate
+servicenow-bootstrap-validate: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run python -m servicenow_bootstrap.setup_validations
+
+.PHONY: servicenow-bootstrap-create-user
+servicenow-bootstrap-create-user: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run python -m servicenow_bootstrap.create_noc_agent_user --config config.json
+
+.PHONY: servicenow-bootstrap-create-api-key
+servicenow-bootstrap-create-api-key: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run python -m servicenow_bootstrap.create_noc_agent_api_key --config config.json
+
+.PHONY: servicenow-bootstrap-create-data
+servicenow-bootstrap-create-data: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run python -m servicenow_bootstrap.create_incident_test_data --config config.json
+
+.PHONY: test-servicenow-bootstrap
+test-servicenow-bootstrap: deps-servicenow-bootstrap
+	cd $(SERVICENOW_BOOTSTRAP_DIR) && uv run pytest
