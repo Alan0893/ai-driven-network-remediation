@@ -35,11 +35,11 @@ INTEGRATIONS_CACHE_TTL = float(os.getenv("INTEGRATIONS_CACHE_TTL", "10"))
 
 # ── Probe targets ─────────────────────────────────────────────────
 INTEGRATION_TARGETS = [
-    {"id": "mcp-openshift", "name": "MCP OpenShift", "group": "mcp", "probe_url": f"{MCP_OPENSHIFT_URL}/"},
-    {"id": "mcp-lokistack", "name": "MCP LokiStack", "group": "mcp", "probe_url": f"{MCP_LOKISTACK_URL}/"},
-    {"id": "mcp-kafka", "name": "MCP Kafka", "group": "mcp", "probe_url": f"{MCP_KAFKA_URL}/"},
-    {"id": "mcp-aap", "name": "MCP AAP", "group": "mcp", "probe_url": f"{MCP_AAP_URL}/"},
-    {"id": "mcp-slack", "name": "MCP Slack", "group": "mcp", "probe_url": f"{MCP_SLACK_URL}/"},
-    {"id": "mcp-servicenow", "name": "MCP ServiceNow", "group": "mcp", "probe_url": f"{MCP_SERVICENOW_URL}/"},
+    {"id": "mcp-openshift", "name": "MCP OpenShift", "group": "mcp", "probe_url": f"{MCP_OPENSHIFT_URL}/health"},
+    {"id": "mcp-lokistack", "name": "MCP LokiStack", "group": "mcp", "probe_url": f"{MCP_LOKISTACK_URL}/health"},
+    {"id": "mcp-kafka", "name": "MCP Kafka", "group": "mcp", "probe_url": f"{MCP_KAFKA_URL}/health"},
+    {"id": "mcp-aap", "name": "MCP AAP", "group": "mcp", "probe_url": f"{MCP_AAP_URL}/health"},
+    {"id": "mcp-slack", "name": "MCP Slack", "group": "mcp", "probe_url": f"{MCP_SLACK_URL}/health"},
+    {"id": "mcp-servicenow", "name": "MCP ServiceNow", "group": "mcp", "probe_url": f"{MCP_SERVICENOW_URL}/health"},
     {"id": "servicenow", "name": "ServiceNow", "group": "platform", "probe_url": f"{SERVICENOW_URL}/health"},
 ]
