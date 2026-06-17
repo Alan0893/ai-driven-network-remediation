@@ -22,13 +22,6 @@ Create a default fully qualified app name.
 {{- end }}
 
 {{/*
-ServingRuntime name derived from values.
-*/}}
-{{- define "playground.runtimeName" -}}
-{{- .Values.runtime.name }}
-{{- end }}
-
-{{/*
 Common labels applied to all resources.
 */}}
 {{- define "playground.labels" -}}

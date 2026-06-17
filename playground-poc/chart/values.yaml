@@ -3,53 +3,6 @@ nameOverride: ""
 # -- Override the fully qualified app name.
 fullnameOverride: ""
 
-# Model Serving
-model:
-  # Set to false to skip deploying the model (reuse an existing InferenceService)
-  deploy: true
-  # Name used for the InferenceService and display in the Playground
-  name: granite-4-0-tiny
-  # OCI or HTTP URI for the model weights (ModelCar image)
-  storageUri: oci://registry.redhat.io/rhai/modelcar-granite-4-0-h-tiny:3.0
-  # Model format recognised by KServe / vLLM
-  format: vLLM
-  # Mark as generative AI asset so it appears in Gen AI Studio
-  genaiAsset: true
-  # Disable auth on the inference endpoint (Tech Preview default)
-  enableAuth: false
-  # Replica count for the predictor
-  replicas: 1
-  resources:
-    limits:
-      cpu: "4"
-      memory: 16Gi
-      nvidia.com/gpu: "1"
-    requests:
-      cpu: "4"
-      memory: 16Gi
-      nvidia.com/gpu: "1"
-  # Tolerations for GPU node scheduling
-  tolerations:
-    - key: g5-gpu
-      value: "true"
-      effect: NoSchedule
-      operator: Equal
-
-# vLLM Runtime 
-runtime:
-  # Name of the ServingRuntime resource
-  name: vllm-tool-calling
-  # Display name shown in the RHOAI dashboard
-  displayName: vLLM Tool-Calling Runtime
-  # vLLM container image 
-  image: registry.redhat.io/rhaii/vllm-cuda-rhel9@sha256:ad06abf3bb5235ebb5b2df84cd1b9fd09e823f0ff2eebfc82bb4590275ccfe0b
-  # vLLM args appended after the defaults (--port, --model, --served-model-name)
-  extraArgs:
-    - --enable-auto-tool-choice
-    - --tool-call-parser=granite4
-    - --max-model-len=8192
-    - --gpu-memory-utilization=0.90
-
 # MCP Server Registration
 mcpServers:
   # Enable creation of the gen-ai-aa-mcp-servers ConfigMap
