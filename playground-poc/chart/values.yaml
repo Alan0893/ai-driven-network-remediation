@@ -38,3 +38,29 @@ dashboard:
   namespace: redhat-ods-applications
   # Name of the OdhDashboardConfig CR
   configName: odh-dashboard-config
+
+# LlamaStack Distribution CR
+llamaStack:
+  enabled: true
+  name: lsd-genai-playground
+  replicas: 1
+  modelName: granite-4-0-tiny
+  embeddingModel: nomic-ai/nomic-embed-text-v1.5
+  embeddingDimension: 768
+  vllm:
+    apiToken: fake
+    tlsVerify: "false"
+    maxTokens: 4096
+  pgvector:
+    host: pgvector
+    port: 5432
+    db: rag_blueprint
+    user: postgres
+    password: rag_password
+  resources:
+    limits:
+      cpu: "2"
+      memory: 12Gi
+    requests:
+      cpu: 250m
+      memory: 500Mi

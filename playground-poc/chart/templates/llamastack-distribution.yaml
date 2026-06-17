@@ -1,0 +1,56 @@
+{{- if .Values.llamaStack.enabled }}
+apiVersion: llamastack.io/v1alpha1
+kind: LlamaStackDistribution
+metadata:
+  name: {{ .Values.llamaStack.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "playground.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.llamaStack.replicas }}
+  server:
+    distribution:
+      name: rh-dev
+    containerSpec:
+      env:
+        - name: ENABLE_PGVECTOR
+          value: "true"
+        - name: PGVECTOR_HOST
+          value: {{ .Values.llamaStack.pgvector.host | quote }}
+        - name: PGVECTOR_PORT
+          value: {{ .Values.llamaStack.pgvector.port | quote }}
+        - name: PGVECTOR_DB
+          value: {{ .Values.llamaStack.pgvector.db | quote }}
+        - name: PGVECTOR_USER
+          value: {{ .Values.llamaStack.pgvector.user | quote }}
+        - name: PGVECTOR_PASSWORD
+          value: {{ .Values.llamaStack.pgvector.password | quote }}
+        - name: POSTGRES_HOST
+          value: {{ .Values.llamaStack.pgvector.host | quote }}
+        - name: POSTGRES_PORT
+          value: {{ .Values.llamaStack.pgvector.port | quote }}
+        - name: POSTGRES_DB
+          value: {{ .Values.llamaStack.pgvector.db | quote }}
+        - name: POSTGRES_USER
+          value: {{ .Values.llamaStack.pgvector.user | quote }}
+        - name: POSTGRES_PASSWORD
+          value: {{ .Values.llamaStack.pgvector.password | quote }}
+        - name: VLLM_URL
+          value: "http://{{ .Values.llamaStack.modelName }}-predictor.{{ .Release.Namespace }}.svc.cluster.local/v1"
+        - name: VLLM_API_TOKEN
+          value: {{ .Values.llamaStack.vllm.apiToken | quote }}
+        - name: VLLM_TLS_VERIFY
+          value: {{ .Values.llamaStack.vllm.tlsVerify | quote }}
+        - name: VLLM_MAX_TOKENS
+          value: {{ .Values.llamaStack.vllm.maxTokens | quote }}
+        - name: EMBEDDING_MODEL
+          value: {{ .Values.llamaStack.embeddingModel | quote }}
+        - name: EMBEDDING_DIMENSION
+          value: {{ .Values.llamaStack.embeddingDimension | quote }}
+      resources:
+        {{- toYaml .Values.llamaStack.resources | nindent 8 }}
+  network:
+    allowedFrom:
+      namespaces:
+        - {{ .Release.Namespace }}
+{{- end }}
