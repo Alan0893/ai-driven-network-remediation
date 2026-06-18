@@ -33,6 +33,10 @@ AUDIT_MAX_MESSAGES = int(os.getenv("AUDIT_MAX_MESSAGES", "500"))
 
 INTEGRATIONS_CACHE_TTL = float(os.getenv("INTEGRATIONS_CACHE_TTL", "10"))
 
+# Business impact estimation defaults
+BASELINE_MANUAL_MTTR_SECONDS = float(os.getenv("BASELINE_MANUAL_MTTR_SECONDS", "900"))
+OPS_HOURLY_COST_USD = float(os.getenv("OPS_HOURLY_COST_USD", "120"))
+
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
 
 # TLS verification: path to CA bundle for self-signed certs, "false" to disable, empty for default.

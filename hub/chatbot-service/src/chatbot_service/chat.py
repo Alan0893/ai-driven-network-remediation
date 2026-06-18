@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from .config import MODEL_API_URL, MODEL_MAX_TOKENS, MODEL_NAME, MODEL_TIMEOUT_SECONDS, SSL_VERIFY
+from .utils import get_mcp_items
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +19,12 @@ def build_chat_context(
     integrations_data: dict[str, Any],
     history: list[dict[str, str]],
 ) -> str:
-    """Build a context-rich prompt for the LLM."""
-    mcp_items = [i for i in integrations_data.get("integrations", []) if i.get("group") == "mcp"]
+    """Build a context-rich prompt for the LLM.
+
+    TODO: Consider making the system prompt configurable (env var or file)
+    to allow prompt iteration without code changes.
+    """
+    mcp_items = get_mcp_items(integrations_data)
     mcp_line = ", ".join(f"{i['name']}={i['status']}" for i in mcp_items) or "no-mcp-data"
     recent = history[-4:]
     convo = "\n".join(f"{item['role']}: {item['content']}" for item in recent) or "none"
@@ -79,7 +84,7 @@ def format_chat_reply(
     integrations_data: dict[str, Any],
 ) -> str:
     """Format LLM output into structured executive reply, or generate fallback."""
-    mcp_items = [i for i in integrations_data.get("integrations", []) if i.get("group") == "mcp"]
+    mcp_items = get_mcp_items(integrations_data)
     mcp_lines = [f"- {i['name']}: {i['status']} (http={i.get('http_code') or 'n/a'})" for i in mcp_items]
     if not mcp_lines:
         mcp_lines = ["- No MCP status available."]

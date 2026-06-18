@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 from uuid import uuid4
 
 
@@ -21,3 +22,8 @@ def parse_iso(value: str | None) -> datetime | None:
 
 def normalize_session_id(session_id: str | None) -> str:
     return session_id.strip() if session_id and session_id.strip() else str(uuid4())
+
+
+def get_mcp_items(integrations_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract MCP-group integrations from the integrations payload."""
+    return [i for i in integrations_data.get("integrations", []) if i.get("group") == "mcp"]

@@ -6,7 +6,7 @@ import statistics
 from datetime import datetime, timezone
 from typing import Any
 
-from .config import AUDIT_LOOKBACK_HOURS
+from .config import AUDIT_LOOKBACK_HOURS, BASELINE_MANUAL_MTTR_SECONDS, OPS_HOURLY_COST_USD
 from .utils import parse_iso
 
 
@@ -189,9 +189,8 @@ def build_incident_movie(records: list[dict[str, Any]], slo: dict[str, Any]) -> 
 
     total = len(records)
     mttr = float(slo.get("mttr_seconds") or 0)
-    # Placeholder: assumes 15-min manual MTTR baseline; replace with real org data when available
-    baseline_manual_mttr = 900.0
-    per_incident_saved = max(0.0, baseline_manual_mttr - mttr)
+    # Placeholder: replace with real org data when available (configurable via env vars)
+    per_incident_saved = max(0.0, BASELINE_MANUAL_MTTR_SECONDS - mttr)
     total_seconds_saved = per_incident_saved * auto_resolved
 
     impact = {
@@ -200,8 +199,7 @@ def build_incident_movie(records: list[dict[str, Any]], slo: dict[str, Any]) -> 
         "tickets_avoided": auto_resolved,
         "escalated_tickets": escalated,
         "hours_returned_to_ops": round(total_seconds_saved / 3600.0, 2),
-        # Placeholder cost rate — adjust to actual blended ops rate
-        "estimated_cost_saved_usd": round((total_seconds_saved / 3600.0) * 120.0, 2),
+        "estimated_cost_saved_usd": round((total_seconds_saved / 3600.0) * OPS_HOURLY_COST_USD, 2),
         "model_confidence_avg": round(statistics.mean(confidence_vals), 3) if confidence_vals else None,
     }
     return movie, impact

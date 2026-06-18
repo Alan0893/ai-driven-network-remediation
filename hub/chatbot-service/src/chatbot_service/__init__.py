@@ -38,7 +38,7 @@ from .config import (
 from .kafka import build_demo_event, fetch_recent_audits, publish_demo_event
 from .probes import fetch_servicenow_incident_count, probe_http
 from .slo import build_incident_movie, compute_slo_metrics, normalize_incident_record
-from .utils import normalize_session_id, utc_now
+from .utils import get_mcp_items, normalize_session_id, utc_now
 
 # ── App State ─────────────────────────────────────────────────────
 MAX_CHAT_SESSIONS = 100
@@ -218,7 +218,7 @@ async def chat(req: ChatRequest) -> dict:
     if len(history) > 20:
         del history[:-20]
 
-    mcp_items = [i for i in integrations_data.get("integrations", []) if i.get("group") == "mcp"]
+    mcp_items = get_mcp_items(integrations_data)
 
     return {
         "timestamp": utc_now(),
