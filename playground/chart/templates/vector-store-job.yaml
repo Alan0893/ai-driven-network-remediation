@@ -36,7 +36,7 @@ spec:
               import urllib.request
               import urllib.error
 
-              LLAMASTACK_URL = "{{ .Values.vectorStore.llamaStackUrl | default (printf "http://lsd-genai-playground-service.%s.svc:8321" .Release.Namespace) }}"
+              LLAMASTACK_URL = "{{ .Values.vectorStore.llamaStackUrl | default (printf "http://llamastack.%s.svc:8321" .Release.Namespace) }}"
               VECTOR_STORE_NAME = "{{ .Values.vectorStore.name }}"
               EMBEDDING_MODEL = "{{ .Values.vectorStore.embeddingModel | default "vllm-embedding/nomic-ai/nomic-embed-text-v1.5" }}"
               WAIT_TIMEOUT = {{ .Values.vectorStore.job.waitTimeoutSeconds }}

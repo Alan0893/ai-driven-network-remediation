@@ -31,13 +31,14 @@ mcpServers:
       description: Slack notifications and alerts
 
 # Vector Store Registration
-# Post-install Job that waits for LlamaStack, then ensures the vector store exists.
-# The ingestion pipeline (hub chart) later populates it with runbook content.
+# Post-install Job that connects to the hub's already-deployed LlamaStack and
+# ensures the vector store exists.  The ingestion pipeline (hub chart) later
+# populates it with runbook content.
 vectorStore:
   enabled: true
-  # Name of the vector store to create in LlamaStack
+  # Name of the vector store to register in LlamaStack
   name: noc_runbooks
-  # LlamaStack URL (default: http://lsd-genai-playground-service.<namespace>.svc:8321)
+  # URL of the hub's LlamaStack service (default: http://llamastack.<namespace>.svc:8321)
   llamaStackUrl: ""
   # Embedding model ID (default: vllm-embedding/nomic-ai/nomic-embed-text-v1.5)
   embeddingModel: ""
@@ -54,37 +55,3 @@ vectorStore:
       requests:
         cpu: 50m
         memory: 64Mi
-
-# LlamaStack Distribution CR
-# Disabled by default — the Playground UI creates the LSD via a single click.
-# Enable for fully headless/CI deploys where no UI interaction is desired.
-llamaStack:
-  enabled: false
-  name: lsd-genai-playground
-  replicas: 1
-  modelName: granite-4-0-tiny
-  embeddingModel: nomic-ai/nomic-embed-text-v1.5
-  embeddingDimension: 768
-  vllm:
-    apiToken: fake
-    tlsVerify: "false"
-    maxTokens: 4096
-  vllmEmbedding:
-    url: ""
-    apiToken: ""
-    tlsVerify: ""
-    maxTokens: "8192"
-  embeddingProviderModelId: ""
-  pgvector:
-    host: pgvector
-    port: 5432
-    db: rag_blueprint
-    user: postgres
-    password: rag_password
-  resources:
-    limits:
-      cpu: "2"
-      memory: 12Gi
-    requests:
-      cpu: 250m
-      memory: 500Mi

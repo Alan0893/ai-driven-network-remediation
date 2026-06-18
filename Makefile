@@ -73,6 +73,9 @@ SERVICENOW_MOCK_IMG    := $(REGISTRY)/servicenow-mock:$(VERSION)
 # when no GPU capacity is available.
 ENABLE_LLM_SERVICE     ?= true
 
+# ── Playground (registers hub resources with Gen AI Studio) ──────
+ENABLE_PLAYGROUND      ?= true
+
 ADNR_LLM_ENABLED := $(and $(ADNR_LLM_ID),$(ADNR_LLM_URL),$(ADNR_LLM_TOKEN))
 
 helm_adnr_llm_args = \
@@ -222,6 +225,12 @@ endif
 ifeq ($(ENABLE_LANGFUSE),true)
 	$(MAKE) _langfuse-deploy
 endif
+ifeq ($(ENABLE_KAFKA),true)
+	$(MAKE) kafka-install
+endif
+ifeq ($(ENABLE_PLAYGROUND),true)
+	$(MAKE) playground-install
+endif
 
 .PHONY: playground-install
 playground-install: namespace
@@ -235,6 +244,9 @@ playground-uninstall:
 
 .PHONY: helm-uninstall
 helm-uninstall:
+ifeq ($(ENABLE_PLAYGROUND),true)
+	$(MAKE) playground-uninstall
+endif
 ifeq ($(ENABLE_HUB),true)
 	helm uninstall $(RELEASE) --namespace $(NAMESPACE) --ignore-not-found
 	oc delete pvc pg-data-pgvector-0 --namespace $(NAMESPACE) --ignore-not-found
