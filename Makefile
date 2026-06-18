@@ -68,6 +68,11 @@ AAP_MOCK_IMG           := $(REGISTRY)/aap-mock:$(VERSION)
 ENABLE_SERVICENOW_MOCK ?= true
 SERVICENOW_MOCK_IMG    := $(REGISTRY)/servicenow-mock:$(VERSION)
 
+# ── LLM Service (on-cluster model via KServe) ────────────────────
+# Enabled by default for quickstart; disable with ENABLE_LLM_SERVICE=false
+# when no GPU capacity is available.
+ENABLE_LLM_SERVICE     ?= true
+
 ADNR_LLM_ENABLED := $(and $(ADNR_LLM_ID),$(ADNR_LLM_URL),$(ADNR_LLM_TOKEN))
 
 helm_adnr_llm_args = \
@@ -202,6 +207,7 @@ ifeq ($(ENABLE_HUB),true)
 		$(helm_mcp_image_args) \
 		--set-string mcp-servers.mcp-servers.noc-openshift.env.DEFAULT_NAMESPACE='$(EDGE_NAMESPACE)' \
 		--set mcp-servers.mcp-servers.noc-lokistack.enabled=$(ENABLE_LOKISTACK) \
+		--set llm-service.enabled=$(ENABLE_LLM_SERVICE) \
 		--set-string lokistack.name='$(LOKISTACK_NAME)' \
 		--set-string lokistack.namespace='$(LOKISTACK_NAMESPACE)' \
 		$(helm_lokistack_registration_args) \
