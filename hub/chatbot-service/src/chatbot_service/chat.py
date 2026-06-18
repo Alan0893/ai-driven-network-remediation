@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .config import MODEL_API_URL, MODEL_MAX_TOKENS, MODEL_NAME, MODEL_TIMEOUT_SECONDS
+from .config import MODEL_API_URL, MODEL_MAX_TOKENS, MODEL_NAME, MODEL_TIMEOUT_SECONDS, SSL_VERIFY
 
 
 def build_chat_context(
@@ -46,7 +46,7 @@ async def call_model(prompt: str) -> tuple[str, str]:
         "temperature": 0.2,
     }
     try:
-        async with httpx.AsyncClient(timeout=MODEL_TIMEOUT_SECONDS, verify=False) as client:
+        async with httpx.AsyncClient(timeout=MODEL_TIMEOUT_SECONDS, verify=SSL_VERIFY) as client:
             resp = await client.post(MODEL_API_URL, json=payload)
         if resp.status_code != 200:
             return "", f"http-{resp.status_code}"

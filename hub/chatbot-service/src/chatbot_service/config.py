@@ -33,6 +33,15 @@ AUDIT_MAX_MESSAGES = int(os.getenv("AUDIT_MAX_MESSAGES", "500"))
 
 INTEGRATIONS_CACHE_TTL = float(os.getenv("INTEGRATIONS_CACHE_TTL", "10"))
 
+# TLS verification: path to CA bundle for self-signed certs, "false" to disable, empty for default.
+_ssl_env = os.getenv("SSL_CA_BUNDLE", "")
+if _ssl_env.lower() == "false":
+    SSL_VERIFY: bool | str = False
+elif _ssl_env:
+    SSL_VERIFY = _ssl_env
+else:
+    SSL_VERIFY = True
+
 # ── Probe targets ─────────────────────────────────────────────────
 INTEGRATION_TARGETS = [
     {"id": "mcp-openshift", "name": "MCP OpenShift", "group": "mcp", "probe_url": f"{MCP_OPENSHIFT_URL}/health"},
