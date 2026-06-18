@@ -68,6 +68,8 @@ llm-service:
     granite-4-0-tiny:
       id: ibm-granite/granite-4.0-tiny-preview
       enabled: true
+      labels:
+        opendatahub.io/genai-asset: "true"
       resources:
         limits:
           cpu: "2"
