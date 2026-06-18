@@ -131,22 +131,30 @@ def health() -> dict:
 
 @app.get("/ready")
 async def ready():
-    """Readiness probe — verifies Kafka and ServiceNow are reachable."""
+    """Readiness probe — reports dependency status but always passes.
+
+    The BFF gracefully degrades when dependencies are unavailable
+    (empty timelines, fallback chat, 502 on demo trigger), so it can
+    always serve useful traffic. Dependency status is informational.
+    """
+    import socket
+
     from .config import KAFKA_BOOTSTRAP, SERVICENOW_URL
 
     checks: dict[str, bool] = {}
 
-    kafka_probe = await probe_http(f"http://{KAFKA_BOOTSTRAP.split(',')[0]}", timeout=2.0)
-    checks["kafka"] = kafka_probe["reachable"] or kafka_probe["http_code"] is not None
+    try:
+        host, port = KAFKA_BOOTSTRAP.split(",")[0].rsplit(":", 1)
+        sock = socket.create_connection((host, int(port)), timeout=2)
+        sock.close()
+        checks["kafka"] = True
+    except OSError:
+        checks["kafka"] = False
 
     sn_probe = await probe_http(SERVICENOW_URL, timeout=2.0)
     checks["servicenow"] = sn_probe["reachable"]
 
-    all_ready = all(checks.values())
-    content = {"status": "ready" if all_ready else "unavailable", "checks": checks}
-    if not all_ready:
-        return JSONResponse(status_code=503, content=content)
-    return content
+    return {"status": "ready", "checks": checks}
 
 
 @app.get("/api/summary")
