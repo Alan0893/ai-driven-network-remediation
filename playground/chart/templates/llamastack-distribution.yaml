@@ -43,10 +43,20 @@ spec:
           value: {{ .Values.llamaStack.vllm.tlsVerify | quote }}
         - name: VLLM_MAX_TOKENS
           value: {{ .Values.llamaStack.vllm.maxTokens | quote }}
+        - name: VLLM_EMBEDDING_URL
+          value: {{ .Values.llamaStack.vllmEmbedding.url | default (printf "http://%s-predictor.%s.svc.cluster.local/v1" .Values.llamaStack.modelName .Release.Namespace) | quote }}
+        - name: VLLM_EMBEDDING_API_TOKEN
+          value: {{ .Values.llamaStack.vllmEmbedding.apiToken | default .Values.llamaStack.vllm.apiToken | quote }}
+        - name: VLLM_EMBEDDING_TLS_VERIFY
+          value: {{ .Values.llamaStack.vllmEmbedding.tlsVerify | default .Values.llamaStack.vllm.tlsVerify | quote }}
+        - name: VLLM_EMBEDDING_MAX_TOKENS
+          value: {{ .Values.llamaStack.vllmEmbedding.maxTokens | default "8192" | quote }}
         - name: EMBEDDING_MODEL
           value: {{ .Values.llamaStack.embeddingModel | quote }}
         - name: EMBEDDING_DIMENSION
           value: {{ .Values.llamaStack.embeddingDimension | quote }}
+        - name: EMBEDDING_PROVIDER_MODEL_ID
+          value: {{ .Values.llamaStack.embeddingProviderModelId | default .Values.llamaStack.embeddingModel | quote }}
       resources:
         {{- toYaml .Values.llamaStack.resources | nindent 8 }}
   network:

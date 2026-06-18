@@ -7,7 +7,7 @@ fullnameOverride: ""
 mcpServers:
   # Enable creation of the gen-ai-aa-mcp-servers ConfigMap
   enabled: true
-  # Namespace where the ConfigMap is created 
+  # Namespace where the ConfigMap is created
   namespace: redhat-ods-applications
   # List of MCP servers to register
   servers:
@@ -30,18 +30,36 @@ mcpServers:
       url: http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/
       description: Slack notifications and alerts
 
-# Dashboard Configuration 
-dashboard:
-  # Enable patching the OdhDashboardConfig to show Gen AI Studio
+# Vector Store Registration
+# Post-install Job that waits for LlamaStack, then ensures the vector store exists.
+# The ingestion pipeline (hub chart) later populates it with runbook content.
+vectorStore:
   enabled: true
-  # Namespace of the OdhDashboardConfig CR
-  namespace: redhat-ods-applications
-  # Name of the OdhDashboardConfig CR
-  configName: odh-dashboard-config
+  # Name of the vector store to create in LlamaStack
+  name: noc_runbooks
+  # LlamaStack URL (default: http://lsd-genai-playground-service.<namespace>.svc:8321)
+  llamaStackUrl: ""
+  # Embedding model ID (default: vllm-embedding/nomic-ai/nomic-embed-text-v1.5)
+  embeddingModel: ""
+  job:
+    image: python:3.12-slim
+    backoffLimit: 4
+    activeDeadlineSeconds: 600
+    waitTimeoutSeconds: 300
+    pollIntervalSeconds: 10
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
 
 # LlamaStack Distribution CR
+# Disabled by default — the Playground UI creates the LSD via a single click.
+# Enable for fully headless/CI deploys where no UI interaction is desired.
 llamaStack:
-  enabled: true
+  enabled: false
   name: lsd-genai-playground
   replicas: 1
   modelName: granite-4-0-tiny
@@ -51,6 +69,12 @@ llamaStack:
     apiToken: fake
     tlsVerify: "false"
     maxTokens: 4096
+  vllmEmbedding:
+    url: ""
+    apiToken: ""
+    tlsVerify: ""
+    maxTokens: "8192"
+  embeddingProviderModelId: ""
   pgvector:
     host: pgvector
     port: 5432

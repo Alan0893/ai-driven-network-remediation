@@ -223,6 +223,16 @@ ifeq ($(ENABLE_LANGFUSE),true)
 	$(MAKE) _langfuse-deploy
 endif
 
+.PHONY: playground-install
+playground-install: namespace
+	helm upgrade --install playground playground/chart \
+		--namespace $(NAMESPACE) \
+		--wait --timeout 5m
+
+.PHONY: playground-uninstall
+playground-uninstall:
+	helm uninstall playground --namespace $(NAMESPACE) --ignore-not-found
+
 .PHONY: helm-uninstall
 helm-uninstall:
 ifeq ($(ENABLE_HUB),true)

@@ -1,0 +1,105 @@
+{{- if .Values.vectorStore.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "playground.fullname" . }}-vector-store-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "playground.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vector-store-init
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "10"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.vectorStore.job.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.vectorStore.job.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "playground.labels" . | nindent 8 }}
+        app.kubernetes.io/component: vector-store-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ensure-vector-store
+          image: "{{ .Values.vectorStore.job.image }}"
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          command: ["python3", "-c"]
+          args:
+            - |
+              import json
+              import sys
+              import time
+              import urllib.request
+              import urllib.error
+
+              LLAMASTACK_URL = "{{ .Values.vectorStore.llamaStackUrl | default (printf "http://lsd-genai-playground-service.%s.svc:8321" .Release.Namespace) }}"
+              VECTOR_STORE_NAME = "{{ .Values.vectorStore.name }}"
+              EMBEDDING_MODEL = "{{ .Values.vectorStore.embeddingModel | default "vllm-embedding/nomic-ai/nomic-embed-text-v1.5" }}"
+              WAIT_TIMEOUT = {{ .Values.vectorStore.job.waitTimeoutSeconds }}
+              POLL_INTERVAL = {{ .Values.vectorStore.job.pollIntervalSeconds }}
+
+              def wait_for_llamastack():
+                  deadline = time.monotonic() + WAIT_TIMEOUT
+                  url = f"{LLAMASTACK_URL}/v1/health"
+                  while time.monotonic() < deadline:
+                      try:
+                          req = urllib.request.Request(url, method="GET")
+                          with urllib.request.urlopen(req, timeout=5) as resp:
+                              if resp.status == 200:
+                                  print(f"LlamaStack is ready at {LLAMASTACK_URL}")
+                                  return True
+                      except (urllib.error.URLError, OSError) as e:
+                          print(f"Waiting for LlamaStack... ({e})")
+                      time.sleep(POLL_INTERVAL)
+                  print("ERROR: Timed out waiting for LlamaStack", file=sys.stderr)
+                  return False
+
+              def find_vector_store_by_name(name):
+                  url = f"{LLAMASTACK_URL}/v1/vector_stores?limit=100"
+                  try:
+                      req = urllib.request.Request(url, method="GET")
+                      with urllib.request.urlopen(req, timeout=10) as resp:
+                          data = json.loads(resp.read())
+                          stores = data.get("data", data) if isinstance(data, dict) else data
+                          for store in stores:
+                              store_name = store.get("name") if isinstance(store, dict) else getattr(store, "name", None)
+                              if store_name == name:
+                                  return store
+                  except (urllib.error.URLError, OSError) as e:
+                      print(f"Warning: could not list vector stores: {e}")
+                  return None
+
+              def create_vector_store(name, embedding_model):
+                  url = f"{LLAMASTACK_URL}/v1/vector_stores"
+                  payload = json.dumps({"name": name, "embedding_model": embedding_model}).encode("utf-8")
+                  req = urllib.request.Request(
+                      url, data=payload, method="POST",
+                      headers={"Content-Type": "application/json"},
+                  )
+                  with urllib.request.urlopen(req, timeout=30) as resp:
+                      result = json.loads(resp.read())
+                      print(f"Created vector store: {json.dumps(result, indent=2)}")
+                      return result
+
+              if not wait_for_llamastack():
+                  sys.exit(1)
+
+              existing = find_vector_store_by_name(VECTOR_STORE_NAME)
+              if existing:
+                  store_id = existing.get("id") if isinstance(existing, dict) else existing
+                  print(f"Vector store '{VECTOR_STORE_NAME}' already exists (id={store_id})")
+                  sys.exit(0)
+
+              try:
+                  create_vector_store(VECTOR_STORE_NAME, EMBEDDING_MODEL)
+                  print(f"Successfully registered vector store '{VECTOR_STORE_NAME}'")
+              except Exception as e:
+                  print(f"ERROR: Failed to create vector store: {e}", file=sys.stderr)
+                  sys.exit(1)
+          resources:
+            {{- toYaml .Values.vectorStore.job.resources | nindent 12 }}
+{{- end }}
