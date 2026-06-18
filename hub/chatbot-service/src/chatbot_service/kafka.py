@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -15,6 +16,8 @@ from .config import (
 )
 from .slo import normalize_incident_record
 from .utils import parse_iso
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_recent_audits() -> list[dict[str, Any]]:
@@ -32,12 +35,14 @@ def fetch_recent_audits() -> list[dict[str, Any]]:
             value_deserializer=lambda m: m.decode("utf-8", errors="replace"),
         )
     except Exception:
+        logger.warning("Failed to connect to Kafka at %s", KAFKA_BOOTSTRAP, exc_info=True)
         return records
 
     try:
         consumer.poll(timeout_ms=800)
         partitions = consumer.assignment()
         if not partitions:
+            logger.debug("No partitions assigned for topic %s", AUDIT_TOPIC)
             return records
 
         max_per_partition = max(50, AUDIT_MAX_MESSAGES // max(1, len(partitions)))
@@ -51,6 +56,7 @@ def fetch_recent_audits() -> list[dict[str, Any]]:
             try:
                 data = json.loads(msg.value)
             except Exception:
+                logger.debug("Skipping non-JSON message at offset %s", msg.offset)
                 continue
             normalized = normalize_incident_record(data)
             ts = parse_iso(normalized.get("timestamp"))
@@ -61,9 +67,10 @@ def fetch_recent_audits() -> list[dict[str, Any]]:
             if len(records) >= AUDIT_MAX_MESSAGES:
                 break
     except Exception:
-        pass
+        logger.exception("Error consuming from Kafka topic %s", AUDIT_TOPIC)
     finally:
         consumer.close()
+    logger.info("Fetched %d audit records from %s", len(records), AUDIT_TOPIC)
     return records
 
 
@@ -113,4 +120,5 @@ def publish_demo_event(event: dict[str, Any]) -> int:
     metadata = future.get(timeout=10)
     producer.flush(timeout=10)
     producer.close(timeout=10)
+    logger.info("Published demo event to %s at offset %d", DEMO_TOPIC, metadata.offset)
     return int(metadata.offset)

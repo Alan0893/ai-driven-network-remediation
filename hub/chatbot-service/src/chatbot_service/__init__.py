@@ -14,12 +14,15 @@ Endpoints:
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 from .chat import build_chat_context, call_model, format_chat_reply
 from .config import (
@@ -146,6 +149,7 @@ async def trigger_demo(req: DemoTriggerRequest) -> dict:
     try:
         offset = publish_demo_event(event)
     except Exception as exc:
+        logger.exception("Failed to publish demo event for scenario=%s", req.scenario)
         return {
             "timestamp": utc_now(),
             "status": "error",
