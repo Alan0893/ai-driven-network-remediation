@@ -343,6 +343,7 @@ minio-uninstall:
 
 .PHONY: unit-tests
 unit-tests:
+	cd hub/chatbot-service && uv sync --group dev && uv run pytest tests/ -o "addopts="
 	cd hub/agent-service && uv run pytest
 	cd hub/mcp-servers/mcp-openshift && uv sync --group dev && uv run pytest
 	cd hub/mcp-servers/mcp-lokistack && uv sync --group dev && uv run pytest
