@@ -1,0 +1,59 @@
+{{- if .Values.ingestionPipeline.autoIngest.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "hub.fullname" . }}-runbook-ingest
+  labels:
+    {{- include "hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: runbook-ingest
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "20"
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: {{ .Values.ingestionPipeline.autoIngest.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.ingestionPipeline.autoIngest.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "hub.labels" . | nindent 8 }}
+        app.kubernetes.io/component: runbook-ingest
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: ingest
+          image: "{{ .Values.ingestionPipeline.autoIngest.image }}"
+          env:
+            - name: INGESTION_URL
+              value: "http://{{ include "hub.fullname" . }}-ingestion-pipeline.{{ .Release.Namespace }}.svc:8000"
+            - name: WAIT_TIMEOUT
+              value: "{{ .Values.ingestionPipeline.autoIngest.waitTimeoutSeconds }}"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              deadline=$(($(date +%s) + WAIT_TIMEOUT))
+              echo "Waiting for ingestion pipeline at $INGESTION_URL ..."
+              while [ "$(date +%s)" -lt "$deadline" ]; do
+                if curl -sf "$INGESTION_URL/health" > /dev/null 2>&1; then
+                  echo "Ingestion pipeline is ready"
+                  break
+                fi
+                sleep 5
+              done
+              curl -sf "$INGESTION_URL/health" > /dev/null 2>&1 || { echo "ERROR: Ingestion pipeline not ready"; exit 1; }
+
+              echo "Syncing runbooks to MinIO ..."
+              curl -sf -X POST "$INGESTION_URL/runbooks/sync" || { echo "ERROR: sync failed"; exit 1; }
+              echo "Sync complete"
+
+              echo "Ingesting runbooks into vector store ..."
+              curl -sf -X POST "$INGESTION_URL/runbooks/ingest" || { echo "ERROR: ingest failed"; exit 1; }
+              echo "Ingestion complete"
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+{{- end }}

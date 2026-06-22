@@ -29,29 +29,3 @@ mcpServers:
     - name: MCP-Slack
       url: http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/
       description: Slack notifications and alerts
-
-# Vector Store Registration
-# Post-install Job that connects to the hub's already-deployed LlamaStack and
-# ensures the vector store exists.  The ingestion pipeline (hub chart) later
-# populates it with runbook content.
-vectorStore:
-  enabled: true
-  # Name of the vector store to register in LlamaStack
-  name: noc_runbooks
-  # URL of the hub's LlamaStack service (default: http://llamastack.<namespace>.svc:8321)
-  llamaStackUrl: ""
-  # Embedding model ID (default: sentence-transformers/nomic-ai/nomic-embed-text-v1.5)
-  embeddingModel: ""
-  job:
-    image: python:3.12-slim
-    backoffLimit: 4
-    activeDeadlineSeconds: 600
-    waitTimeoutSeconds: 300
-    pollIntervalSeconds: 10
-    resources:
-      limits:
-        cpu: 200m
-        memory: 128Mi
-      requests:
-        cpu: 50m
-        memory: 64Mi
