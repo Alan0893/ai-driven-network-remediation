@@ -223,6 +223,9 @@ ifeq ($(ENABLE_HUB),true)
 		$(helm_servicenow_mock_args) \
 		$(HELM_EXTRA_ARGS) \
 		--wait --timeout 30m
+ifeq ($(ENABLE_LLM_SERVICE),true)
+	@oc label inferenceservice granite-4-0-tiny -n $(NAMESPACE) opendatahub.io/genai-asset=true --overwrite 2>/dev/null ||:
+endif
 else
 	@echo "ENABLE_HUB is not true — skipping hub chart deployment"
 endif
