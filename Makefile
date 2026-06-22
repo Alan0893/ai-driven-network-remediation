@@ -98,6 +98,9 @@ helm_mcp_image_args = \
 	--set mcp-servers.mcp-servers.noc-servicenow.image.repository=$(REGISTRY)/noc-mcp-servicenow \
 	--set mcp-servers.mcp-servers.noc-servicenow.image.tag=$(VERSION)
 
+helm_gpu_taint_args = \
+	$(if $(GPU_TAINT_KEY),--set 'llm-service.deviceConfigs.gpu.tolerations[0].key=$(GPU_TAINT_KEY)' --set 'llm-service.deviceConfigs.gpu.tolerations[0].operator=Exists' --set 'llm-service.deviceConfigs.gpu.tolerations[0].effect=NoSchedule',)
+
 helm_aap_mock_args = \
 	$(if $(filter true,$(ENABLE_AAP_MOCK)),--set mcp-servers.mcp-servers.noc-aap.env.AAP_URL=http://aap-mock.$(NAMESPACE).svc:8080,) \
 	$(if $(filter true,$(ENABLE_AAP_MOCK)),--set mcp-servers.mcp-servers.noc-aap.env.AAP_VERIFY_SSL=false,)
@@ -215,6 +218,7 @@ ifeq ($(ENABLE_HUB),true)
 		--set-string lokistack.namespace='$(LOKISTACK_NAMESPACE)' \
 		$(helm_lokistack_registration_args) \
 		$(helm_adnr_llm_args) \
+		$(helm_gpu_taint_args) \
 		$(helm_aap_mock_args) \
 		$(helm_servicenow_mock_args) \
 		$(HELM_EXTRA_ARGS) \

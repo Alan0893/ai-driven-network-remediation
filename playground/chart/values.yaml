@@ -40,7 +40,7 @@ vectorStore:
   name: noc_runbooks
   # URL of the hub's LlamaStack service (default: http://llamastack.<namespace>.svc:8321)
   llamaStackUrl: ""
-  # Embedding model ID (default: vllm-embedding/nomic-ai/nomic-embed-text-v1.5)
+  # Embedding model ID (default: sentence-transformers/nomic-ai/nomic-embed-text-v1.5)
   embeddingModel: ""
   job:
     image: python:3.12-slim

@@ -63,7 +63,7 @@ llm-service:
   enabled: false
   device: gpu
   secret:
-    enabled: false
+    enabled: true
   models:
     granite-4-0-tiny:
       id: ibm-granite/granite-4.0-tiny-preview
@@ -78,6 +78,8 @@ llm-service:
           cpu: "1"
           memory: 16Gi
       args:
+        - --served-model-name
+        - granite-4-0-tiny
         - --enable-auto-tool-choice
         - --chat-template
         - /chat-templates/tool_chat_template_llama3.2_json.jinja
