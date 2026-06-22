@@ -38,7 +38,7 @@ from .config import (
 from .kafka import build_demo_event, fetch_recent_audits, publish_demo_event
 from .probes import fetch_servicenow_incident_count, probe_http
 from .slo import build_incident_movie, compute_slo_metrics, normalize_incident_record
-from .utils import get_mcp_items, normalize_session_id, utc_now
+from .utils import build_deps, get_mcp_items, normalize_session_id, utc_now
 
 # ── App State ─────────────────────────────────────────────────────
 MAX_CHAT_SESSIONS = 100
@@ -92,11 +92,15 @@ async def _build_integrations() -> dict[str, Any]:
             "http_code": probe["http_code"],
         })
 
-    audits = await asyncio.to_thread(fetch_recent_audits)
+    audits, kafka_ok = await asyncio.to_thread(fetch_recent_audits)
     slo = compute_slo_metrics(audits, up_count, len(integrations))
     movie, impact = build_incident_movie(audits, slo)
 
+    all_probes_ok = (len(integrations) - up_count) == 0
+    _deps = build_deps({"probes": all_probes_ok, "kafka": kafka_ok})
+
     return {
+        "_deps": _deps,
         "timestamp": utc_now(),
         "total": len(integrations),
         "up": up_count,
@@ -160,7 +164,9 @@ async def ready():
 @app.get("/api/summary")
 async def summary() -> dict:
     tickets, servicenow_info = await fetch_servicenow_incident_count()
+    _deps = build_deps({"servicenow": servicenow_info["reachable"]})
     return {
+        "_deps": _deps,
         "timestamp": utc_now(),
         "agent_status": "running",
         "cluster": "hub",
@@ -196,6 +202,7 @@ async def trigger_demo(req: DemoTriggerRequest) -> dict:
 
     scenario = event["labels"]["dark_noc_scenario"]
     return {
+        "_deps": build_deps({}),
         "timestamp": utc_now(),
         "status": "queued",
         "incident_id": incident_id,
@@ -233,7 +240,11 @@ async def chat(req: ChatRequest) -> dict:
 
     mcp_items = get_mcp_items(integrations_data)
 
+    llm_ok = model_source not in ("unreachable", "disabled")
+    _deps = build_deps({"llm": llm_ok})
+
     return {
+        "_deps": _deps,
         "session_id": session_id,
         "timestamp": utc_now(),
         "reply": reply,
