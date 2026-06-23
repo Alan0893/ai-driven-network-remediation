@@ -1,0 +1,14 @@
+{{- if .Values.vectorStores.enabled }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: gen-ai-aa-vector-stores
+  namespace: {{ .Values.vectorStores.namespace }}
+  labels:
+    {{- include "playground.labels" . | nindent 4 }}
+data:
+  {{- range .Values.vectorStores.stores }}
+  {{ .name }}: |
+    {"url":"{{ tpl .url $ }}","name":"{{ .vectorStoreName }}","description":"{{ .description }}"}
+  {{- end }}
+{{- end }}

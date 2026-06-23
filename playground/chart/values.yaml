@@ -29,3 +29,16 @@ mcpServers:
     - name: MCP-Slack
       url: http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/
       description: Slack notifications and alerts
+
+# Vector Store Registration
+vectorStores:
+  # Enable creation of the gen-ai-aa-vector-stores ConfigMap
+  enabled: true
+  # Namespace where the ConfigMap is created
+  namespace: redhat-ods-applications
+  # List of vector stores to register
+  stores:
+    - name: NOC-Runbooks
+      url: http://llamastack.{{ .Release.Namespace }}.svc:8321
+      vectorStoreName: noc_runbooks
+      description: NOC runbook knowledge base for incident diagnosis and remediation
