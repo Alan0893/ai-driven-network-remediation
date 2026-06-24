@@ -15,7 +15,7 @@ dependencies:
     repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
   - name: mcp-servers
     version: 0.5.17
-    repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
+    repository: file://../../ai-architecture-charts
     condition: mcp-servers.enabled
   # Local infrastructure subcharts
   - name: kafka
@@ -30,3 +30,7 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/lokistack"
     condition: lokistack.enabled
+  - name: playground
+    version: 0.0.1
+    repository: file://../../ai-architecture-charts
+    condition: playground.enabled

@@ -527,4 +527,10 @@ mcp-servers:
       enabled: false
     openshift-mcp:
       enabled: false
+    slack-mcp:
+      enabled: false
 
+playground:
+  enabled: true
+  genAiStudio: true
+  externalVectorStores: true
