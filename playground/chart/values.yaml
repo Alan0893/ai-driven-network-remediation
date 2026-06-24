@@ -1,0 +1,44 @@
+# -- Override the chart name used in resource names.
+nameOverride: ""
+# -- Override the fully qualified app name.
+fullnameOverride: ""
+
+# MCP Server Registration
+mcpServers:
+  # Enable creation of the gen-ai-aa-mcp-servers ConfigMap
+  enabled: true
+  # Namespace where the ConfigMap is created
+  namespace: redhat-ods-applications
+  # List of MCP servers to register
+  servers:
+    - name: MCP-OpenShift
+      url: http://mcp-noc-openshift.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: OpenShift cluster operations — namespaces, pods, logs, events, deployments
+    - name: MCP-LokiStack
+      url: http://mcp-noc-lokistack.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: Log search, metrics, error pattern detection via LokiStack
+    - name: MCP-Kafka
+      url: http://mcp-noc-kafka.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: Kafka topic and message operations
+    - name: MCP-AAP
+      url: http://mcp-noc-aap.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: Ansible Automation Platform — job templates, launch, status
+    - name: MCP-ServiceNow
+      url: http://mcp-noc-servicenow.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: ServiceNow incident management
+    - name: MCP-Slack
+      url: http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/
+      description: Slack notifications and alerts
+
+# Vector Store Registration
+vectorStores:
+  # Enable creation of the gen-ai-aa-vector-stores ConfigMap
+  enabled: true
+  # Namespace where the ConfigMap is created
+  namespace: redhat-ods-applications
+  # List of vector stores to register
+  stores:
+    - name: NOC-Runbooks
+      url: http://llamastack.{{ .Release.Namespace }}.svc:8321
+      vectorStoreName: noc_runbooks
+      description: NOC runbook knowledge base for incident diagnosis and remediation

@@ -96,6 +96,14 @@ ALL_BUILD_PUSH_IMAGES := \
 	$(CORE_BUILD_PUSH_IMAGES) \
 	$(EXTRA_BUILD_PUSH_IMAGES)
 
+# ── LLM Service (on-cluster model via KServe) ────────────────────
+# Enabled by default for quickstart; disable with ENABLE_LLM_SERVICE=false
+# when no GPU capacity is available.
+ENABLE_LLM_SERVICE     ?= true
+
+# ── Playground (registers hub resources with Gen AI Studio) ──────
+ENABLE_PLAYGROUND      ?= true
+
 ADNR_LLM_ENABLED := $(and $(ADNR_LLM_ID),$(ADNR_LLM_URL),$(ADNR_LLM_TOKEN))
 
 .PHONY: version
@@ -121,6 +129,9 @@ helm_mcp_image_args = \
 	--set mcp-servers.mcp-servers.noc-slack.image.tag=$(VERSION) \
 	--set mcp-servers.mcp-servers.noc-servicenow.image.repository=$(REGISTRY)/noc-mcp-servicenow \
 	--set mcp-servers.mcp-servers.noc-servicenow.image.tag=$(VERSION)
+
+helm_gpu_taint_args = \
+	$(if $(GPU_TAINT_KEY),--set 'llm-service.deviceConfigs.gpu.tolerations[0].key=$(GPU_TAINT_KEY)' --set 'llm-service.deviceConfigs.gpu.tolerations[0].operator=Exists' --set 'llm-service.deviceConfigs.gpu.tolerations[0].effect=NoSchedule',)
 
 helm_aap_mock_args = \
 	$(if $(filter true,$(ENABLE_AAP_MOCK)),--set mcp-servers.mcp-servers.noc-aap.env.AAP_URL=http://aap-mock.$(NAMESPACE).svc:8080,) \
@@ -246,14 +257,19 @@ ifeq ($(ENABLE_HUB),true)
 		$(helm_mcp_image_args) \
 		--set-string mcp-servers.mcp-servers.noc-openshift.env.DEFAULT_NAMESPACE='$(EDGE_NAMESPACE)' \
 		--set mcp-servers.mcp-servers.noc-lokistack.enabled=$(ENABLE_LOKISTACK) \
+		--set llm-service.enabled=$(ENABLE_LLM_SERVICE) \
 		--set-string lokistack.name='$(LOKISTACK_NAME)' \
 		--set-string lokistack.namespace='$(LOKISTACK_NAMESPACE)' \
 		$(helm_lokistack_registration_args) \
 		$(helm_adnr_llm_args) \
+		$(helm_gpu_taint_args) \
 		$(helm_aap_mock_args) \
 		$(helm_servicenow_mock_args) \
 		$(HELM_EXTRA_ARGS) \
 		--wait --timeout 30m
+ifeq ($(ENABLE_LLM_SERVICE),true)
+	@oc label inferenceservice granite-4-0-tiny -n $(NAMESPACE) opendatahub.io/genai-asset=true --overwrite 2>/dev/null ||:
+endif
 else
 	@echo "ENABLE_HUB is not true — skipping hub chart deployment"
 endif
@@ -261,9 +277,28 @@ endif
 ifeq ($(ENABLE_LANGFUSE),true)
 	$(MAKE) _langfuse-deploy
 endif
+ifeq ($(ENABLE_KAFKA),true)
+	$(MAKE) kafka-install
+endif
+ifeq ($(ENABLE_PLAYGROUND),true)
+	$(MAKE) playground-install
+endif
+
+.PHONY: playground-install
+playground-install: namespace
+	helm upgrade --install playground playground/chart \
+		--namespace $(NAMESPACE) \
+		--wait --timeout 5m
+
+.PHONY: playground-uninstall
+playground-uninstall:
+	helm uninstall playground --namespace $(NAMESPACE) --ignore-not-found
 
 .PHONY: helm-uninstall
 helm-uninstall:
+ifeq ($(ENABLE_PLAYGROUND),true)
+	$(MAKE) playground-uninstall
+endif
 ifeq ($(ENABLE_HUB),true)
 	helm uninstall $(RELEASE) --namespace $(NAMESPACE) --ignore-not-found
 	oc delete pvc pg-data-pgvector-0 --namespace $(NAMESPACE) --ignore-not-found
