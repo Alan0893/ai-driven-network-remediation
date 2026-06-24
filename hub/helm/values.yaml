@@ -219,6 +219,44 @@ lokistack:
       tag: latest
     interval: 5
 
+# ── LLM Service (subchart: llm-service) ──────────────────────────
+# Deploys vLLM models on-cluster via KServe InferenceService + ServingRuntime.
+# Disabled by default; enable when the cluster has GPU/CPU capacity for local
+# model serving
+#   make helm-install ADNR_LLM_SERVICE_ENABLED=true
+llm-service:
+  enabled: false
+  device: gpu
+  secret:
+    enabled: true
+  models:
+    granite-4-0-tiny:
+      id: ibm-granite/granite-4.0-tiny-preview
+      enabled: true
+      labels:
+        opendatahub.io/genai-asset: "true"
+      resources:
+        limits:
+          cpu: "2"
+          memory: 32Gi
+        requests:
+          cpu: "1"
+          memory: 16Gi
+      args:
+        - --served-model-name
+        - granite-4-0-tiny
+        - --enable-auto-tool-choice
+        - --chat-template
+        - /chat-templates/tool_chat_template_llama3.2_json.jinja
+        - --tool-call-parser
+        - llama3_json
+        - --max-model-len
+        - "14336"
+        - --max-num-seqs
+        - "32"
+        - --dtype
+        - "bfloat16"
+
 # ══════════════════════════════════════════════════════════════════════
 # Mock services (deployed as Helm templates in hub/helm/templates/)
 # ══════════════════════════════════════════════════════════════════════
