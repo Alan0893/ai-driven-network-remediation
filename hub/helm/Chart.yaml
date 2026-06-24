@@ -19,7 +19,7 @@ dependencies:
     condition: llm-service.enabled
   - name: mcp-servers
     version: 0.5.17
-    repository: file://../../ai-architecture-charts
+    repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
     condition: mcp-servers.enabled
   # Local infrastructure subcharts
   - name: kafka
@@ -36,5 +36,5 @@ dependencies:
     condition: lokistack.enabled
   - name: playground
     version: 0.0.1
-    repository: file://../../ai-architecture-charts
+    repository: file://../../../ai-architecture-charts/playground/helm
     condition: playground.enabled
