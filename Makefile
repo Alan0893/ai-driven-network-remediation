@@ -59,6 +59,14 @@ MINIO_PORT             ?= 9000
 AAP_MOCK_IMG           := $(REGISTRY)/noc-aap-mock:$(VERSION)
 SERVICENOW_MOCK_IMG    := $(REGISTRY)/noc-servicenow-mock:$(VERSION)
 
+# ── LLM Service (on-cluster model via KServe) ────────────────────
+# Enabled by default for quickstart; disable with ENABLE_LLM_SERVICE=false
+# when no GPU capacity is available.
+ENABLE_LLM_SERVICE     ?= true
+
+# ── Playground (registers hub resources with Gen AI Studio) ──────
+ENABLE_PLAYGROUND      ?= true
+
 CORE_BUILD_PUSH_IMAGES := \
 	$(CHATBOT_IMG) \
 	$(INGESTION_IMG) \
@@ -176,6 +184,8 @@ helm_all_args = \
 	$(helm_autorag_args) \
 	$(helm_lightspeed_args) \
 	$(helm_slack_args) \
+	--set llm-service.enabled=$(ENABLE_LLM_SERVICE) \
+	--set playground.enabled=$(ENABLE_PLAYGROUND) \
 	$(HELM_EXTRA_ARGS)
 
 # ══════════════════════════════════════════════════════════════════════
@@ -319,6 +329,16 @@ build-push-servicenow-mock:
 reinstall-all:
 	cd hub/chatbot-service && uv sync --reinstall
 	cd hub/ingestion-pipeline && uv sync --reinstall
+
+.PHONY: playground-install
+playground-install: namespace
+	helm upgrade --install playground ../ai-architecture-charts/playground/helm \
+		--namespace $(NAMESPACE) \
+		--wait --timeout 5m
+
+.PHONY: playground-uninstall
+playground-uninstall:
+	helm uninstall playground --namespace $(NAMESPACE) --ignore-not-found
 
 # ══════════════════════════════════════════════════════════════════════
 # Edge workload
