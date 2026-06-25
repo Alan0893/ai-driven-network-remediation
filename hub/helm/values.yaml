@@ -302,6 +302,12 @@ ingestionPipeline:
     bucket: runbooks
     secure: false
     runbookPrefix: runbooks/
+  autoIngest:
+    enabled: true
+    image: curlimages/curl:latest
+    backoffLimit: 2
+    activeDeadlineSeconds: 600
+    waitTimeoutSeconds: 300
   resources: {}
   livenessProbe:
     httpGet:
