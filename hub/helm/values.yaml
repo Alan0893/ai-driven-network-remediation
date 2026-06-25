@@ -223,7 +223,7 @@ lokistack:
 # Deploys vLLM models on-cluster via KServe InferenceService + ServingRuntime.
 # Disabled by default; enable when the cluster has GPU/CPU capacity for local
 # model serving
-#   make helm-install ADNR_LLM_SERVICE_ENABLED=true
+#   make helm-install ENABLE_LLM_SERVICE=true
 llm-service:
   enabled: false
   device: gpu
@@ -569,8 +569,8 @@ mcp-servers:
       enabled: false
 
 # ── Playground (subchart: playground) ─────────────────────────────
-# Registers ADNR's MCP servers and vector stores with the Gen AI Studio
-# Playground UI via ConfigMaps in redhat-ods-applications.
+# Registers ADNR's MCP servers with the Gen AI Studio Playground UI
+# via ConfigMaps in redhat-ods-applications.
 # URLs use tpl-expanded templates so they resolve to the release namespace.
 playground:
   enabled: true
