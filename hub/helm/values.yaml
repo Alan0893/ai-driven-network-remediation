@@ -596,9 +596,3 @@ playground:
       - name: MCP-Slack
         url: "http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/"
         description: Slack notifications
-  vectorStores:
-    stores:
-      - name: NOC-Runbooks
-        url: "http://llamastack.{{ .Release.Namespace }}.svc:8321"
-        vectorStoreName: noc_runbooks
-        description: NOC runbook knowledge base
