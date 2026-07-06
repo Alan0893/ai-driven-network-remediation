@@ -574,8 +574,19 @@ mcp-servers:
 # URLs use tpl-expanded templates so they resolve to the release namespace.
 playground:
   enabled: true
+  dashboardConfig:
+    enabled: true
   genAiStudio: true
+  aiAssetCustomEndpoints: true
+  externalProviders: true
   externalVectorStores: true
+  customEndpoints:
+    enabled: true
+    endpoints:
+      - modelId: gemini-2.5-flash
+        displayName: Gemini 2.5 Flash
+        url: https://generativelanguage.googleapis.com/v1beta/openai/
+        apiKey: ""
   mcpServers:
     servers:
       - name: MCP-OpenShift
