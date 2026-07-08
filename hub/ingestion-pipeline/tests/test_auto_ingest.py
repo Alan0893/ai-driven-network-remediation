@@ -14,7 +14,7 @@ os.environ.setdefault("MINIO_ACCESS_KEY", "test-key")
 os.environ.setdefault("MINIO_SECRET_KEY", "test-secret")
 os.environ.setdefault("MINIO_BUCKET", "test-bucket")
 os.environ.setdefault("VECTOR_STORE_NAME", "noc_runbooks")
-os.environ.setdefault("LLAMASTACK_HOST", "llamastack")
+os.environ.setdefault("LLAMASTACK_HOST", "llamastack-service")
 os.environ.setdefault("LLAMASTACK_PORT", "8321")
 
 
@@ -47,7 +47,7 @@ class TestAutoIngestFunction:
             mock_settings.minio_bucket = "bucket"
             mock_settings.minio_secure = False
             mock_settings.minio_runbook_prefix = "runbooks/"
-            mock_settings.llamastack_base_url = "http://llamastack:8321"
+            mock_settings.llamastack_base_url = "http://llamastack-service:8321"
             mock_settings.embedding_model = "sentence-transformers/nomic-ai/nomic-embed-text-v1.5"
             mock_settings.chunk_size_tokens = 800
             mock_settings.chunk_overlap_tokens = 80
@@ -111,7 +111,7 @@ class TestAutoIngestFunction:
             mock_settings.minio_bucket = "bucket"
             mock_settings.minio_secure = False
             mock_settings.minio_runbook_prefix = "runbooks/"
-            mock_settings.llamastack_base_url = "http://llamastack:8321"
+            mock_settings.llamastack_base_url = "http://llamastack-service:8321"
             mock_settings.embedding_model = "sentence-transformers/nomic-ai/nomic-embed-text-v1.5"
             mock_settings.chunk_size_tokens = 800
             mock_settings.chunk_overlap_tokens = 80
@@ -228,7 +228,7 @@ class TestConfigDefaults:
             from ingestion_pipeline.config import Settings
 
             s = Settings.from_env()
-            assert s.llamastack_host == "llamastack"
+            assert s.llamastack_host == "llamastack-service"
 
     def test_embedding_model_default(self):
         with patch.dict(os.environ, {}, clear=False):
