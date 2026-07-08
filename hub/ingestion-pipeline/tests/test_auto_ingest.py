@@ -128,12 +128,14 @@ class TestLifespan:
     @patch("ingestion_pipeline.app._auto_ingest")
     @pytest.mark.anyio
     async def test_lifespan_calls_auto_ingest_when_enabled(self, mock_ingest):
+        import time
+
         from ingestion_pipeline.app import lifespan
 
         mock_app = MagicMock()
         with patch("ingestion_pipeline.app._AUTO_INGEST", True):
             async with lifespan(mock_app):
-                pass
+                time.sleep(0.05)  # let background thread run
 
         mock_ingest.assert_called_once()
 
@@ -152,12 +154,15 @@ class TestLifespan:
     @patch("ingestion_pipeline.app._auto_ingest", side_effect=RuntimeError("connection refused"))
     @pytest.mark.anyio
     async def test_lifespan_does_not_crash_on_ingest_failure(self, mock_ingest):
+        import time
+
         from ingestion_pipeline.app import lifespan
 
         mock_app = MagicMock()
         with patch("ingestion_pipeline.app._AUTO_INGEST", True):
             async with lifespan(mock_app):
-                pass  # should not raise
+                time.sleep(0.05)  # let background thread run
+        # should not raise — error is caught inside the thread
 
 
 class TestSyncPackagedRunbooks:

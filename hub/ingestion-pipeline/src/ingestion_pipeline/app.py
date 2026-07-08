@@ -68,10 +68,17 @@ def _auto_ingest() -> None:
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     if _AUTO_INGEST:
-        try:
-            _auto_ingest()
-        except Exception:
-            logger.exception("Auto-ingest failed — API will still serve; retry via POST /runbooks/ingest")
+        import threading
+
+        def _run_ingest():
+            try:
+                _auto_ingest()
+            except Exception:
+                logger.exception("Auto-ingest failed — retry via POST /runbooks/ingest")
+
+        thread = threading.Thread(target=_run_ingest, daemon=True, name="auto-ingest")
+        thread.start()
+        logger.info("Auto-ingest started in background thread")
     yield
 
 
