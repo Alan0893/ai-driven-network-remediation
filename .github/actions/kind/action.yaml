@@ -81,6 +81,7 @@ runs:
             --set mcp-servers.mcp-servers.noc-aap.env.AAP_URL=http://aap-mock.hub.svc:8080 \
             --set mcp-servers.mcp-servers.noc-aap.env.AAP_VERIFY_SSL=false \
             --set ingestionPipeline.waitForDeps=false \
+            --set ingestionPipeline.autoIngestOnStartup=false \
             --set kafka.kafka.storage.storageClass=standard \
             --set kafka.kafka.storage.size=256Mi \
             --set kafka.kafka.retention.hours=1 \
@@ -102,5 +103,26 @@ runs:
           echo "Waiting for ${label}..."
           oc wait --for=condition=Ready pod -l "app.kubernetes.io/name=${label}" -n hub --timeout=120s
         done
+      shell: bash
+
+    - name: Wait for LlamaStack to be serving
+      run: |
+        echo "Waiting for LlamaStack pod to be ready..."
+        oc wait --for=condition=Ready pod -l app.kubernetes.io/name=llama-stack -n hub --timeout=300s || true
+        echo "Checking LlamaStack /v1/models endpoint..."
+        oc port-forward -n hub svc/llamastack-service 18321:8321 &
+        PF_PID=$!
+        sleep 3
+        retries=0
+        until curl -sf http://localhost:18321/v1/models > /dev/null 2>&1; do
+          retries=$((retries + 1))
+          if [ $retries -ge 40 ]; then
+            echo "LlamaStack not ready after 40 attempts — proceeding anyway"
+            break
+          fi
+          echo "  attempt $retries/40..."
+          sleep 5
+        done
+        kill $PF_PID 2>/dev/null || true
       shell: bash
 
