@@ -45,6 +45,8 @@ spec:
               containerPort: 8000
               protocol: TCP
           env:
+            - name: AUTO_INGEST_ON_STARTUP
+              value: {{ .Values.ingestionPipeline.autoIngestOnStartup | default "true" | quote }}
             - name: LLAMASTACK_HOST
               value: {{ .Values.ingestionPipeline.llamastackHost | quote }}
             - name: LLAMASTACK_PORT

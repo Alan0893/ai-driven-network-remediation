@@ -25,7 +25,7 @@ pgvector:
     port: "5432"
 
 llama-stack:
-  host: llamastack-service
+  host: llamastack
   port: "8321"
   replicaCount: 1
   managedByOperator: true
@@ -255,8 +255,9 @@ edgeRbac:
 
 ingestionPipeline:
   replicaCount: 1
+  autoIngestOnStartup: "true"
   vectorStoreName: noc_runbooks
-  llamastackHost: llamastack-service
+  llamastackHost: llamastack
   embeddingModel: sentence-transformers/nomic-ai/nomic-embed-text-v1.5
   chunkSizeTokens: 800
   chunkOverlapTokens: 80
