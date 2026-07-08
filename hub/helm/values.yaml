@@ -587,6 +587,13 @@ playground:
         displayName: Gemini 2.5 Flash
         url: https://generativelanguage.googleapis.com/v1beta/openai/
         apiKey: ""
+  vectorStores:
+    enabled: true
+    stores:
+      - name: NOC-Runbooks
+        url: "http://llamastack-service.{{ .Release.Namespace }}.svc:8321"
+        vectorStoreName: noc_runbooks
+        description: NOC runbook knowledge base for incident remediation
   mcpServers:
     servers:
       - name: MCP-OpenShift
