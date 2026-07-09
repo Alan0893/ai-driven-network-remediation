@@ -29,6 +29,8 @@ llama-stack:
   port: "8321"
   replicaCount: 1
   managedByOperator: true
+  extraLabels:
+    opendatahub.io/dashboard: "true"
   network:
     exposeRoute: false
   volumes:
@@ -575,7 +577,7 @@ mcp-servers:
 playground:
   enabled: true
   dashboardConfig:
-    enabled: true
+    enabled: false
   genAiStudio: true
   aiAssetCustomEndpoints: true
   externalProviders: true
@@ -590,9 +592,20 @@ playground:
   vectorStores:
     enabled: true
     stores:
-      - name: NOC-Runbooks
-        url: "http://llamastack-service.{{ .Release.Namespace }}.svc:8321"
-        vectorStoreName: noc_runbooks
+      - providerId: pgvector-provider
+        providerType: remote::pgvector
+        host: "pgvector.{{ .Release.Namespace }}.svc.cluster.local"
+        port: 5432
+        db: rag_blueprint
+        user: postgres
+        distanceMetric: COSINE
+        credentialSecret:
+          name: pgvector
+          key: password
+        vectorStoreId: vs-noc-runbooks-001
+        displayName: "NOC Runbooks (pgvector)"
+        embeddingModel: sentence-transformers/ibm-granite/granite-embedding-125m-english
+        embeddingDimension: 768
         description: NOC runbook knowledge base for incident remediation
   mcpServers:
     servers:
