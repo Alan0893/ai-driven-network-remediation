@@ -11,11 +11,11 @@ dependencies:
     version: 0.5.5
     repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
   - name: llama-stack
-    version: 0.8.7
-    repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
+    version: 0.8.8
+    repository: file://../../../ai-architecture-charts/llama-stack/helm
   - name: llm-service
-    version: 0.5.10
-    repository: https://rh-ai-quickstart.github.io/ai-architecture-charts
+    version: 0.5.11
+    repository: file://../../../ai-architecture-charts/llm-service/helm
     condition: llm-service.enabled
   - name: mcp-servers
     version: 0.5.17
