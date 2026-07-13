@@ -589,6 +589,16 @@ playground:
         displayName: Gemini 2.5 Flash
         url: https://generativelanguage.googleapis.com/v1beta/openai/
         apiKey: ""
+      - modelId: nomic-embed-text-v1-5
+        displayName: nomic-embed-text-v1-5
+        url: https://maas-rhdp.apps.maas.redhatworkshops.io/v1
+        apiKey: ""
+        modelType: embedding
+        embeddingDimension: 768
+      - modelId: Llama-Guard-3-1B
+        displayName: Llama-Guard-3-1B
+        url: https://maas-rhdp.apps.maas.redhatworkshops.io/v1
+        apiKey: ""
   vectorStores:
     enabled: true
     stores:
@@ -604,7 +614,7 @@ playground:
           key: password
         vectorStoreId: vs-noc-runbooks-001
         displayName: "NOC Runbooks (pgvector)"
-        embeddingModel: sentence-transformers/ibm-granite/granite-embedding-125m-english
+        embeddingModel: nomic-embed-text-v1-5
         embeddingDimension: 768
         description: NOC runbook knowledge base for incident remediation
   mcpServers:
