@@ -29,8 +29,7 @@ llama-stack:
   port: "8321"
   replicaCount: 1
   managedByOperator: true
-  extraLabels:
-    opendatahub.io/dashboard: "true"
+  extraLabels: {}
   network:
     exposeRoute: false
   volumes:
@@ -637,3 +636,50 @@ playground:
       - name: MCP-Slack
         url: "http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/"
         description: Slack notifications
+  postInstall:
+    enabled: true
+    image: "quay.io/rh-ee-alalin/noc-ingestion-pipeline:0.0.1-SNAPSHOT"
+    waitForLlamaStack:
+      enabled: true
+      url: "http://lsd-genai-playground-service:8321"
+    command:
+      - sh
+      - -c
+      - |
+        ingestion-pipeline &
+        sleep 5
+        until wget -qO- http://localhost:8000/health > /dev/null 2>&1; do sleep 2; done
+        echo "Syncing..." && wget -qO- --post-data= http://localhost:8000/runbooks/sync
+        echo "Ingesting..." && wget -qO- --post-data= http://localhost:8000/runbooks/ingest
+        echo "Done."
+    env:
+      - name: LLAMASTACK_HOST
+        value: "lsd-genai-playground-service"
+      - name: LLAMASTACK_PORT
+        value: "8321"
+      - name: VECTOR_STORE_NAME
+        value: "noc_runbooks"
+      - name: EMBEDDING_MODEL
+        value: "sentence-transformers/nomic-ai/nomic-embed-text-v1.5"
+      - name: CHUNK_SIZE_TOKENS
+        value: "800"
+      - name: CHUNK_OVERLAP_TOKENS
+        value: "80"
+      - name: MINIO_ENDPOINT
+        value: "minio:9000"
+      - name: MINIO_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: user
+      - name: MINIO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: password
+      - name: MINIO_BUCKET
+        value: "runbooks"
+      - name: MINIO_SECURE
+        value: "false"
+      - name: MINIO_RUNBOOK_PREFIX
+        value: "runbooks/"
