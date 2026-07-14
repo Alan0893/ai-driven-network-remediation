@@ -202,7 +202,7 @@ ifeq ($(ENABLE_HUB),true)
 	helm upgrade --install $(RELEASE) hub/helm \
 		--namespace $(NAMESPACE) \
 		$(helm_all_args) \
-		--wait --timeout 10m
+		--timeout 10m
 else
 	@echo "ENABLE_HUB is not true — skipping hub chart deployment"
 endif
