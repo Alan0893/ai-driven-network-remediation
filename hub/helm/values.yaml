@@ -588,24 +588,9 @@ playground:
         apiKey: ""
         modelType: embedding
         embeddingDimension: 768
+  # Vector store is auto-created and populated by the post-install job (noc_runbooks)
   vectorStores:
-    enabled: true
-    stores:
-      - providerId: pgvector-provider
-        providerType: remote::pgvector
-        host: "pgvector.{{ .Release.Namespace }}.svc.cluster.local"
-        port: 5432
-        db: rag_blueprint
-        user: postgres
-        distanceMetric: COSINE
-        credentialSecret:
-          name: pgvector
-          key: password
-        vectorStoreId: vs-noc-runbooks-001
-        displayName: "NOC Runbooks (pgvector)"
-        embeddingModel: nomic-embed-text-v1-5
-        embeddingDimension: 768
-        description: NOC runbook knowledge base for incident remediation
+    enabled: false
   mcpServers:
     servers:
       - name: MCP-OpenShift
