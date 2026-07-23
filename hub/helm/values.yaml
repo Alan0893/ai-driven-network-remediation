@@ -566,8 +566,6 @@ mcp-servers:
       enabled: false
     openshift-mcp:
       enabled: false
-    slack-mcp:
-      enabled: false
 
 # ── Playground (subchart: playground) ─────────────────────────────
 # Registers ADNR's MCP servers with the Gen AI Studio Playground UI
@@ -625,9 +623,6 @@ playground:
       - name: MCP-ServiceNow
         url: "http://mcp-noc-servicenow.{{ .Release.Namespace }}.svc:8000/mcp/"
         description: ServiceNow incident management
-      - name: MCP-Slack
-        url: "http://mcp-noc-slack.{{ .Release.Namespace }}.svc:8000/mcp/"
-        description: Slack notifications
   postInstall:
     enabled: true
     image: "quay.io/rh-ee-alalin/noc-ingestion-pipeline:0.0.1-SNAPSHOT"
