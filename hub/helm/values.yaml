@@ -231,30 +231,30 @@ llm-service:
   secret:
     enabled: true
   models:
-    granite-4-0-tiny:
-      id: ibm-granite/granite-4.0-tiny-preview
+    granite-4-0-8b:
+      id: ibm-granite/granite-4.0-8b
       enabled: true
       labels:
         opendatahub.io/genai-asset: "true"
       resources:
         limits:
+          cpu: "4"
+          memory: 64Gi
+        requests:
           cpu: "2"
           memory: 32Gi
-        requests:
-          cpu: "1"
-          memory: 16Gi
       args:
         - --served-model-name
-        - granite-4-0-tiny
+        - granite-4.0-8b
         - --enable-auto-tool-choice
         - --chat-template
         - /chat-templates/tool_chat_template_llama3.2_json.jinja
         - --tool-call-parser
         - llama3_json
         - --max-model-len
-        - "14336"
+        - "8192"
         - --max-num-seqs
-        - "32"
+        - "16"
         - --dtype
         - "bfloat16"
 
