@@ -582,6 +582,11 @@ playground:
   customEndpoints:
     enabled: true
     endpoints:
+      # Pass apiKey at deploy time or set here for testing (blank before committing)
+      - modelId: gemini-2.5-flash
+        displayName: Gemini 2.5 Flash
+        url: https://generativelanguage.googleapis.com/v1beta/openai/
+        apiKey: ""
       - modelId: nomic-embed-text-v1-5
         displayName: nomic-embed-text-v1-5
         url: https://maas-rhdp.apps.maas.redhatworkshops.io/v1
@@ -601,9 +606,9 @@ playground:
         credentialSecret:
           name: pgvector
           key: password
-        vectorStoreId: noc_runbooks
+        vectorStoreId: vs-noc-runbooks-001
         displayName: "NOC Runbooks (pgvector)"
-        embeddingModel: sentence-transformers/nomic-ai/nomic-embed-text-v1.5
+        embeddingModel: nomic-embed-text-v1-5
         embeddingDimension: 768
         description: NOC runbook knowledge base for incident remediation
   mcpServers:
