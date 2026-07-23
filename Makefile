@@ -332,7 +332,9 @@ reinstall-all:
 
 .PHONY: playground-install
 playground-install: namespace
-	helm upgrade --install playground ../ai-architecture-charts/playground/helm \
+	helm upgrade --install playground playground \
+		--repo https://rh-ai-quickstart.github.io/ai-architecture-charts \
+		--version 0.0.1 \
 		--namespace $(NAMESPACE) \
 		--wait --timeout 5m
 
