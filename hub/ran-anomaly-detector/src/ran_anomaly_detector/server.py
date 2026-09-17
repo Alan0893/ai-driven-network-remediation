@@ -8,12 +8,16 @@ from collections import deque
 from contextlib import asynccontextmanager
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from kafka import KafkaProducer
 from loguru import logger
+from shared.kafka import TopicConsumer
+
 from ran_anomaly_detector.config import (
-    HISTORY_WINDOW_SIZE,
+    DETECT_INFERENCE_URL,
+    DETECT_TOKEN,
     KAFKA_ANOMALIES_TOPIC,
     KAFKA_BOOTSTRAP,
     KAFKA_CONSUMER_ENABLED,
@@ -23,7 +27,6 @@ from ran_anomaly_detector.config import (
     RECENT_ANOMALIES_LIMIT,
 )
 from ran_anomaly_detector.detection import AnomalyDetectionService
-from shared.kafka import TopicConsumer
 
 AnomalyBuffer = deque[dict[str, Any]]
 
@@ -37,7 +40,7 @@ def _handle_metrics_message(
 ) -> None:
     anomalies = service.process_message(raw_value)
     for anomaly in anomalies:
-        logger.info("RAN anomaly detected: {}", anomaly)
+        logger.info("RAN anomaly detected: incident_id={}", anomaly.get("incident_id"))
         recent_anomalies.append(anomaly)
         if producer is not None:
             try:
@@ -46,9 +49,27 @@ def _handle_metrics_message(
                 logger.exception("Failed to publish anomaly to Kafka")
 
 
+def _check_predictor_ready() -> bool:
+    """Check if the detect predictor is reachable and ready.
+
+    No URL configured = predictor not required (return True).
+    """
+    if not DETECT_INFERENCE_URL:
+        return True
+    try:
+        base_url = DETECT_INFERENCE_URL.rsplit("/", 2)[0]
+        request_kwargs: dict[str, Any] = {"timeout": 3.0}
+        if DETECT_TOKEN:
+            request_kwargs["headers"] = {"Authorization": f"Bearer {DETECT_TOKEN}"}
+        resp = httpx.get(f"{base_url}/ready", **request_kwargs)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    detection_service = AnomalyDetectionService(history_size=HISTORY_WINDOW_SIZE)
+    detection_service = AnomalyDetectionService()
     recent_anomalies: AnomalyBuffer = deque(maxlen=RECENT_ANOMALIES_LIMIT)
 
     app.state.detection_service = detection_service
@@ -105,6 +126,9 @@ def ready(req: Request):
     if KAFKA_PRODUCER_ENABLED:
         if req.app.state.kafka_producer is None:
             not_ready.append("kafka-producer")
+
+    if not _check_predictor_ready():
+        not_ready.append("predictor")
 
     if not_ready:
         return JSONResponse({"ready": False, "reason": ", ".join(not_ready)}, status_code=503)

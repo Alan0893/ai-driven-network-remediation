@@ -100,6 +100,9 @@ scripts/ci/test-local.sh
 # Generated multi-cluster spoke overlay (make render-spokes / validate-topology)
 hub/helm/spokes.generated.yaml
 
+# Generated TelecomTS demo fixtures (regenerate with: make generate-fixtures)
+hub/telco-oran/src/telco_oran/fixtures/*.json
+
 dev-private/
 graphify-out
 issues/
@@ -109,3 +112,4 @@ prompt.md
 # Postman Desktop workspace scaffolding (auto-generated)
 /.postman/
 /postman/
+TelecomTS/

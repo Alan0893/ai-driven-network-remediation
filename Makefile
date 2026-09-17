@@ -211,6 +211,10 @@ helm_adnr_llm_args = \
 	--set-string telco.ranChatbotService.env.modelName='adnr-llm/$(ADNR_LLM_ID)' \
 	--set-string telco.ranRcaService.env.graniteModelName='adnr-llm/$(ADNR_LLM_ID)'
 
+helm_adnr_detect_args = \
+	$(if $(ADNR_DETECT_INFERENCE_URL),--set-string telco.ranAnomalyDetector.env.detectInferenceUrl='$(ADNR_DETECT_INFERENCE_URL)',) \
+	$(if $(ADNR_DETECT_TOKEN),--set-string telco.ranAnomalyDetector.env.detectToken='$(ADNR_DETECT_TOKEN)',)
+
 helm_mcp_image_args = \
 	--set network.mcp-servers.mcp-servers.noc-openshift.image.repository=$(REGISTRY)/noc-mcp-openshift \
 	--set network.mcp-servers.mcp-servers.noc-openshift.image.tag=$(VERSION) \
@@ -352,6 +356,7 @@ helm_all_args = \
 	$(helm_mock_args) \
 	$(helm_gitea_args) \
 	$(helm_adnr_llm_args) \
+	$(helm_adnr_detect_args) \
 	$(helm_autorag_args) \
 	$(helm_lightspeed_args) \
 	$(helm_slack_args) \
@@ -368,6 +373,10 @@ render-spokes:
 	EDGE_NAMESPACE='$(EDGE_NAMESPACE)' \
 	SPOKE_NAME_PREFIX='$(SPOKE_NAME_PREFIX)' \
 	python3 scripts/topology/render-spokes.py -o '$(SPOKES_GENERATED)'
+
+.PHONY: generate-fixtures
+generate-fixtures:
+	uv run --no-project --with datasets scripts/generate_fixtures.py
 
 .PHONY: validate-topology
 validate-topology:
@@ -680,6 +689,27 @@ build-ran-ml-service-image:
 build-push-ran-ml-service: build-ran-ml-service-image
 	$(CONTAINER_TOOL) push $(RAN_ML_SERVICE_IMG) $(PUSH_EXTRA_ARGS)
 
+ML_AUTHCONFIG_TEMPLATE := model-serving/ran-ml-service/deploy/authconfig.yaml
+ML_AUTHCONFIG_NS       := model-serving
+
+.PHONY: deploy-ml-authconfig
+deploy-ml-authconfig:
+	@if [ -z "$(AUTH_TOKEN)" ]; then \
+		echo "ERROR: AUTH_TOKEN is required. Usage: AUTH_TOKEN=<token> make deploy-ml-authconfig" >&2; \
+		exit 1; \
+	fi
+	$(eval ROUTE_HOST ?= $(shell oc get route ran-ml-service -n $(ML_AUTHCONFIG_NS) -o jsonpath='{.spec.host}' 2>/dev/null))
+	@if [ -z "$(ROUTE_HOST)" ]; then \
+		echo "ERROR: ROUTE_HOST could not be auto-discovered. Set it explicitly: ROUTE_HOST=<host> AUTH_TOKEN=<token> make deploy-ml-authconfig" >&2; \
+		exit 1; \
+	fi
+	@echo "==> Deploying AuthConfig for host $(ROUTE_HOST)"
+	ROUTE_HOST='$(ROUTE_HOST)' AUTH_TOKEN='$(AUTH_TOKEN)' envsubst '$$ROUTE_HOST $$AUTH_TOKEN' < $(ML_AUTHCONFIG_TEMPLATE) | oc apply -f - -n $(ML_AUTHCONFIG_NS)
+
+.PHONY: delete-ml-authconfig
+delete-ml-authconfig:
+	oc delete authconfig ran-ml-service-auth -n $(ML_AUTHCONFIG_NS) --ignore-not-found
+
 .PHONY: build-ran-anomaly-image
 build-ran-anomaly-image:
 	$(CONTAINER_TOOL) build -t $(RAN_ANOMALY_IMG) --platform=$(ARCH) -f $(RAN_ANOMALY_CONTAINERFILE) $(RAN_ANOMALY_CONTEXT)
@@ -689,7 +719,7 @@ build-ran-rca-image:
 	$(CONTAINER_TOOL) build -t $(RAN_RCA_IMG) --platform=$(ARCH) -f $(RAN_RCA_CONTAINERFILE) $(RAN_RCA_CONTEXT)
 
 .PHONY: build-ran-chatbot-image
-build-ran-chatbot-image:
+build-ran-chatbot-image: generate-fixtures
 	$(CONTAINER_TOOL) build -t $(RAN_CHATBOT_IMG) --platform=$(ARCH) -f $(RAN_CHATBOT_CONTAINERFILE) $(RAN_CHATBOT_CONTEXT)
 
 .PHONY: build-ran-frontend-image
