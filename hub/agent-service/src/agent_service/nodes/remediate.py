@@ -9,11 +9,8 @@ from agent_service.config import (
     TERMINAL_STATUSES,
     now_iso,
 )
-from agent_service.fast_path import (
-    should_check_fast_path,
-    spoke_fast_path_recent,
-    target_deployment_name,
-)
+from agent_service.edge_site import remediation_should_retry, resolve_edge_site_id
+from agent_service.fast_path import recent_deployment_remediation_actuation, target_deployment_name
 from agent_service.models import GraphConfig, RemediationResult
 from agent_service.utils import build_launch_extra_vars
 from agent_service.utils import invoke_tool as _invoke_tool
@@ -55,18 +52,21 @@ def _resolve_template(action: str, failure_type: str | None = None) -> str:
     return action
 
 
-async def _launch_job(template: str, log_event) -> dict:
+async def _launch_job(template: str, log_event, edge_site_id: str) -> dict:
     """Launch an AAP job template with context from the log event."""
+    extra_vars = build_launch_extra_vars(log_event)
+    if edge_site_id and edge_site_id != "unknown":
+        extra_vars["edge_site_id"] = edge_site_id
     return await _invoke_tool(
         "launch_job",
         {
             "job_template_name": template,
-            "extra_vars": build_launch_extra_vars(log_event),
+            "extra_vars": extra_vars,
         },
     )
 
 
-async def _handle_completion(template: str, job_id: int, state, config):
+async def _handle_completion(template: str, job_id: int, state, config, *, edge_site_id: str = ""):
     """Poll a launched job and return the appropriate state update."""
     status = await _poll_job(job_id, config.job_timeout)
 
@@ -79,6 +79,7 @@ async def _handle_completion(template: str, job_id: int, state, config):
             job_id,
             elapsed=config.job_timeout,
             timed_out=True,
+            edge_site_id=edge_site_id,
         )
 
     output_text = await _get_output(job_id)
@@ -96,6 +97,7 @@ async def _handle_completion(template: str, job_id: int, state, config):
             job_id,
             elapsed=elapsed,
             timestamp=finished,
+            edge_site_id=edge_site_id,
         )
 
     return {
@@ -137,24 +139,42 @@ def make_remediate_node(config: GraphConfig):
             }
 
         log_event = state.log_event
-        if log_event and should_check_fast_path(rca.failure_type):
-            deployment = target_deployment_name(log_event.pod_name)
-            if deployment and await spoke_fast_path_recent(
-                namespace=log_event.namespace,
-                deployment=deployment,
-                edge_site_id=log_event.edge_site_id,
-            ):
-                summary = (
-                    f"Spoke fast-path healer already restarted {deployment} "
-                    f"(annotation {FAST_PATH_LAST_HEAL_ANNOTATION} within cooldown)"
+        edge_site_id = resolve_edge_site_id(
+            log_event,
+            resource_specs=state.resource_specs or "",
+            raw_event=state.raw_event or "",
+        )
+        raw_event = state.raw_event or ""
+        if log_event:
+            deployment = target_deployment_name(log_event.pod_name, log_event.namespace)
+            actuation = (
+                await recent_deployment_remediation_actuation(
+                    namespace=log_event.namespace,
+                    deployment=deployment,
+                    edge_site_id=edge_site_id,
+                    raw_event=raw_event,
                 )
+                if deployment
+                else None
+            )
+            if actuation:
+                if actuation == "spoke":
+                    summary = (
+                        f"Deployment {deployment} was already remediated on the spoke "
+                        f"({FAST_PATH_LAST_HEAL_ANNOTATION}); skipping duplicate hub AAP job"
+                    )
+                else:
+                    summary = (
+                        f"Deployment {deployment} had a recent hub rollout restart; "
+                        f"skipping duplicate AAP job"
+                    )
                 logger.info(summary)
                 return {
                     "should_retry": False,
-                    "fast_path_actuation": "spoke",
+                    "fast_path_actuation": actuation,
                     "remediation_result": RemediationResult(
                         action_taken="fast_path_skip",
-                        tool_used="spoke",
+                        tool_used=actuation,
                         success=True,
                         job_id="",
                         duration_seconds=0,
@@ -164,21 +184,22 @@ def make_remediate_node(config: GraphConfig):
                 }
 
         try:
-            launch = await _launch_job(template, state.log_event)
+            launch = await _launch_job(template, state.log_event, edge_site_id)
         except Exception as exc:
             logger.exception("Failed to launch AAP job")
-            return _failure(state, config, template, str(exc))
+            return _failure(state, config, template, str(exc), edge_site_id=edge_site_id)
 
         if not launch.get("success"):
             error = launch.get("error", "Unknown launch error")
             logger.warning(f"AAP launch failed: {error}")
-            return _failure(state, config, template, error)
+            return _failure(state, config, template, error, edge_site_id=edge_site_id)
 
         return await _handle_completion(
             template,
             launch["job_id"],
             state,
             config,
+            edge_site_id=edge_site_id,
         )
 
     return remediate_node
@@ -227,14 +248,21 @@ def _failure(
     elapsed=0,
     timestamp=None,
     timed_out=False,
+    edge_site_id: str = "",
 ) -> dict:
     entry = {"action": "remediate", "template": template, "error": error[:500]}
     if job_id is not None:
         entry["job_id"] = job_id
     attempts = state.failed_attempts + [entry]
+    can_retry = job_id is None and remediation_should_retry(
+        error,
+        edge_site_id,
+        len(attempts),
+        config.max_retries,
+    )
     return {
         "failed_attempts": attempts,
-        "should_retry": len(attempts) <= config.max_retries,
+        "should_retry": can_retry,
         "remediation_result": RemediationResult(
             action_taken=template,
             tool_used="aap",

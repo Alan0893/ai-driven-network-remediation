@@ -24,7 +24,7 @@ class TestClusterName:
     async def test_edge_site_id_always_present(self):
         invoke_mock = AsyncMock(side_effect=lambda t, kw: _LAUNCH_OK)
         with patch("agent_service.nodes.remediate._invoke_tool", invoke_mock):
-            result = await _launch_job("restart-nginx", make_log_event())
+            result = await _launch_job("restart-nginx", make_log_event(), "edge-1")
 
         assert result["success"] is True
         call_kwargs = invoke_mock.call_args[0][1]
@@ -51,8 +51,8 @@ class TestClusterName:
         )
         with (
             patch(
-                "agent_service.nodes.remediate.spoke_fast_path_recent",
-                AsyncMock(return_value=False),
+                "agent_service.nodes.remediate.recent_deployment_remediation_actuation",
+                AsyncMock(return_value=None),
             ),
             patch("agent_service.nodes.remediate._invoke_tool", AsyncMock(side_effect=mock_invoke)),
         ):
