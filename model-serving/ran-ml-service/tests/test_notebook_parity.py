@@ -80,3 +80,15 @@ def test_service_matches_notebook_reference(real_client, notebook_reference: dic
         with torch.no_grad():
             logits = predictor.head(predictor.encoder(model_input))[0]
         assert logits.tolist() == pytest.approx(case["logits"], abs=1e-4)
+
+
+def test_checkpoint_has_persisted_mlflow_provenance(notebook_reference: dict):
+    """Keep an inspectable MLflow link with the deployed-checkpoint reference."""
+    provenance = notebook_reference["mlflow_provenance"]
+
+    assert provenance["status"] == "reconstructed"
+    assert provenance["workspace"]
+    assert provenance["experiment_id"]
+    assert len(provenance["run_id"]) == 32
+    assert provenance["run_url"].endswith(provenance["run_id"])
+    assert "not the original training execution" in provenance["note"]
