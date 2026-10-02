@@ -12,6 +12,15 @@
     "filename": "mantis_pretrained_ad.pt",
     "sha256": "9b00f1a5705c196d218110bf7c39027bedf811675aada74e8742f8d0c953a078"
   },
+  "mlflow_provenance": {
+    "tracking_uri": "https://rh-ai.apps.ai-dev02.kni.syseng.devcluster.openshift.com/mlflow",
+    "workspace": "default",
+    "experiment_id": "47",
+    "run_id": "77fe3e588f874ee28fc78995ead98ce1",
+    "run_url": "https://rh-ai.apps.ai-dev02.kni.syseng.devcluster.openshift.com/mlflow/#/experiments/47/runs/77fe3e588f874ee28fc78995ead98ce1",
+    "status": "reconstructed",
+    "note": "The original telcomts-evaluation MLflow workspace was deleted. This run records verified provenance for the deployed checkpoint and is not the original training execution."
+  },
   "cases": [
     {
       "fixture": "antenna_failure.json",

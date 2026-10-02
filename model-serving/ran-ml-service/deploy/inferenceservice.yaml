@@ -23,6 +23,11 @@ metadata:
   annotations:
     # Disable Istio sidecar — ran-ml-service manages its own HTTP server.
     sidecar.istio.io/inject: "false"
+    # Reconstructed provenance for the immutable checkpoint in STORAGE_URI.
+    # This records verified checkpoint lineage after the original MLflow
+    # workspace was deleted; it is not the original training execution.
+    ai.redhat.com/mlflow-run: "https://rh-ai.apps.ai-dev02.kni.syseng.devcluster.openshift.com/mlflow/#/experiments/47/runs/77fe3e588f874ee28fc78995ead98ce1"
+    ai.redhat.com/mlflow-provenance-status: "reconstructed"
 spec:
   predictor:
     # predictor.storageUri is not in this cluster's CRD (it gets pruned).

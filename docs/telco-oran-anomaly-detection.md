@@ -176,6 +176,16 @@ of normal traffic.
 | Serving | FastAPI (`ran-ml-service`), port 8080 |
 | Weights | Fine-tuned `.pt` checkpoint loaded from `MANTIS_MODEL_PATH`; HuggingFace backbone (`paris-noah/Mantis-8M`) baked into the OCI image |
 
+### Checkpoint provenance
+
+The deployed AD checkpoint is linked to MLflow run
+[`77fe3e588f874ee28fc78995ead98ce1`](https://rh-ai.apps.ai-dev02.kni.syseng.devcluster.openshift.com/mlflow/#/experiments/47/runs/77fe3e588f874ee28fc78995ead98ce1).
+It records the source-notebook hash, dataset revision and seed, checkpoint revision, and verified
+SHA-256. This is a reconstructed provenance record because the original
+`telcomts-evaluation` MLflow workspace was deleted; it must not be presented as the original
+training execution. The same link is persisted as an annotation on the deployed
+`ran-ml-service` InferenceService.
+
 The model was trained by Alan (see PR #127) using the TelecomTS benchmark pipeline with
 inverse-frequency class weights for the 96/4 normal/anomaly imbalance.
 
