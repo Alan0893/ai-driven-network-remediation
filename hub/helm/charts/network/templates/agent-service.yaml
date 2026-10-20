@@ -42,6 +42,10 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.agentService }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            - name: DEPLOYMENT_MODE
+              value: {{ .Values.topology.deploymentMode | quote }}
+            - name: EDGE_NAMESPACE
+              value: {{ .Values.topology.edgeNamespace | quote }}
             - name: LLAMASTACK_HOST
               value: {{ .Values.llamastack.host | quote }}
             - name: LLAMASTACK_PORT
@@ -79,8 +83,12 @@ spec:
             - name: LIGHTSPEED_VERIFY_SSL
               value: {{ .Values.agentService.lightspeed.verifySSL | quote }}
             {{- end }}
+            - name: AAP_RESOURCE_PREFIX
+              value: {{ include "network.aapResourcePrefix" . | quote }}
             - name: AAP_LIGHTSPEED_TEMPLATE
-              value: {{ .Values.agentService.lightspeed.baseTemplateName | quote }}
+              value: {{ printf "%s%s" (include "network.aapResourcePrefix" .) .Values.agentService.lightspeed.baseTemplateName | quote }}
+            - name: GITEA_PROJECT_NAME
+              value: {{ printf "%s%s" (include "network.aapResourcePrefix" .) .Values.agentService.lightspeed.projectName | quote }}
             - name: SLACK_ENABLED
               value: {{ .Values.agentService.slack.enabled | quote }}
             - name: SLACK_CHANNEL
